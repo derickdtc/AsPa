@@ -1,4 +1,5 @@
 import 'package:aspa/src/pages/landing_page.dart';
+import 'package:aspa/src/pages/reminders_page.dart';
 import 'package:flutter/material.dart';
 import 'package:aspa/src/pages/profile_page.dart';
 
@@ -109,7 +110,13 @@ class _HomepageState extends State<Homepage> {
                     context,
                     label: 'Ver Lembretes',
                     icon: Icons.alarm_on_rounded,
-                    onTap: () {},
+                    onTap: () {
+                      Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => const RemindersPage()),
+                            );
+                    },
                   ),
                 ),
                 const SizedBox(height: 40),
