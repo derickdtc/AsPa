@@ -17,15 +17,25 @@ class RemindersPage extends StatelessWidget {//falta ajustar tamanho e posiciona
           child: Column(
             children: [
               // HEADER
+              Padding(
+                padding: 
+                  const EdgeInsets.symmetric(vertical: 10),
+              ),
               Row(
                 children: [
-                  const Padding(
-                    padding: EdgeInsets.only(left: 29),
-                    child: Icon(
-                      Icons.arrow_back_ios_new_rounded,
-                      size: 28,
+                  Padding(
+                      padding:
+                          const EdgeInsetsDirectional.fromSTEB(29, 0, 0, 0),
+                      child: InkWell(
+                        onTap: () => Navigator.of(context).pop(),
+                        borderRadius: BorderRadius.circular(20),
+                        child: Icon(
+                          Icons.arrow_back_ios_new_rounded,
+                          color: colorScheme.primary,
+                          size: 28,
+                        ),
+                      ),
                     ),
-                  ),
                   Expanded(
                     child: Center(
                       child: Padding(
@@ -35,7 +45,7 @@ class RemindersPage extends StatelessWidget {//falta ajustar tamanho e posiciona
                           style: GoogleFonts.poppins(
                             fontSize: 24,
                             fontWeight: FontWeight.w600,
-                            color: colorScheme.secondary,
+                            color: colorScheme.primary,
                           ),
                         ),
                       ),
@@ -52,6 +62,7 @@ class RemindersPage extends StatelessWidget {//falta ajustar tamanho e posiciona
               const SizedBox(height: 10),
 
               _reminderCard(
+                context,
                 title: '18:00 - Paracetamol',
                 subtitle: '1 comprimido',
               ),
@@ -64,6 +75,7 @@ class RemindersPage extends StatelessWidget {//falta ajustar tamanho e posiciona
               const SizedBox(height: 10),
 
               _reminderCard(
+                context,
                 title: '10:00 - movimento de pinça',
                 subtitle: '10 repetições',
               ),
@@ -99,37 +111,50 @@ class RemindersPage extends StatelessWidget {//falta ajustar tamanho e posiciona
     );
   }
 
-  Widget _reminderCard({
-    required String title,
-    required String subtitle,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 30),
-      child: Container(
-        height: 45,
-        decoration: BoxDecoration(
-          color: const Color(0xFFC62828),
-          borderRadius: BorderRadius.circular(24),
-        ),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              title,
-              style: GoogleFonts.nunito(
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            Text(
-              subtitle,
-              style: GoogleFonts.nunito(
-                fontSize: 12,
-              ),
-            ),
-          ],
-        ),
+  Widget _reminderCard(
+  BuildContext context, {
+  required String title,
+  required String subtitle,
+}) {
+  final theme = Theme.of(context);
+  final colorScheme = theme.colorScheme;
+
+  return Padding(
+    padding: const EdgeInsets.symmetric(horizontal: 30),
+    child: Container(
+      decoration: BoxDecoration(
+        color: colorScheme.primary,
+        borderRadius: BorderRadius.circular(24),
       ),
-    );
-  }
+      padding: const EdgeInsets.symmetric(
+        horizontal: 20,
+        vertical: 10,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Text(
+            title,
+            textAlign: TextAlign.center,
+            style: GoogleFonts.nunito(
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            subtitle,
+            textAlign: TextAlign.center,
+            style: GoogleFonts.nunito(
+              fontSize: 12,
+              fontWeight: FontWeight.w400,
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
 }
