@@ -2,6 +2,7 @@ import 'package:aspa/src/pages/home_page.dart';
 // import 'package:aspa/src/pages/login_page.dart';
 import 'package:aspa/src/pages/signup_page.dart';
 import 'package:flutter/material.dart';
+import 'package:aspa/src/pages/login_page.dart';
 
 class LandingPage extends StatefulWidget {
   const LandingPage({super.key});
@@ -107,7 +108,7 @@ class _LandingPageState extends State<LandingPage> {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                  builder: (context) => const Homepage()),
+                                  builder: (context) => const LoginPageWidget()),
                             );
                           },
                           style: ElevatedButton.styleFrom(
@@ -120,7 +121,7 @@ class _LandingPageState extends State<LandingPage> {
                             padding: const EdgeInsets.symmetric(horizontal: 16),
                           ),
                           child: Text(
-                            'Entrar',
+                            'Login',
                             style: textTheme.titleSmall?.copyWith(
                               fontSize: 35,
                               fontWeight: FontWeight.w300,
