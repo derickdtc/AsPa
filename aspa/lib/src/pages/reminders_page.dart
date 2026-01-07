@@ -57,7 +57,7 @@ class RemindersPage extends StatelessWidget {//falta ajustar tamanho e posiciona
               const SizedBox(height: 36),
 
               // MEDICAÇÕES
-              _sectionHeader('Medicações'),
+              _sectionHeader(context, 'Medicações'),
 
               const SizedBox(height: 10),
 
@@ -65,12 +65,13 @@ class RemindersPage extends StatelessWidget {//falta ajustar tamanho e posiciona
                 context,
                 title: '18:00 - Paracetamol',
                 subtitle: '1 comprimido',
+                onTap: () {}
               ),
 
               const SizedBox(height: 18),
 
               // EXERCÍCIOS
-              _sectionHeader('Exercícios'),
+              _sectionHeader(context, 'Exercícios'),
 
               const SizedBox(height: 10),
 
@@ -78,6 +79,7 @@ class RemindersPage extends StatelessWidget {//falta ajustar tamanho e posiciona
                 context,
                 title: '10:00 - movimento de pinça',
                 subtitle: '10 repetições',
+                onTap: () {},
               ),
             ],
           ),
@@ -88,7 +90,13 @@ class RemindersPage extends StatelessWidget {//falta ajustar tamanho e posiciona
 
   // ---------- COMPONENTES ----------
 
-  Widget _sectionHeader(String title) {
+  Widget _sectionHeader(
+    BuildContext context,
+    String title
+  ) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 30),
       child: Row(
@@ -102,59 +110,73 @@ class RemindersPage extends StatelessWidget {//falta ajustar tamanho e posiciona
               ),
             ),
           ),
-          const Icon(
-            Icons.add,
-            size: 24,
-          ),
+          Padding(
+                      padding:
+                          const EdgeInsetsDirectional.fromSTEB(29, 0, 0, 0),
+                      child: InkWell(
+                        onTap: () {},
+                        borderRadius: BorderRadius.circular(20),
+                        child: Icon(
+                          Icons.add,
+                          color: colorScheme.primary,
+                          size: 28,
+                        ),
+                      ),
+                    ),
         ],
       ),
     );
   }
 
-  Widget _reminderCard(
-  BuildContext context, {
-  required String title,
-  required String subtitle,
-}) {
-  final theme = Theme.of(context);
-  final colorScheme = theme.colorScheme;
+    Widget _reminderCard(
+    BuildContext context, {
+    required String title,
+    required String subtitle,
+    required VoidCallback onTap,
+  }) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
 
   return Padding(
     padding: const EdgeInsets.symmetric(horizontal: 30),
-    child: Container(
-      decoration: BoxDecoration(
-        color: colorScheme.primary,
+    child: Material(
+      color: colorScheme.primary,
+      borderRadius: BorderRadius.circular(24),
+      child: InkWell(
         borderRadius: BorderRadius.circular(24),
-      ),
-      padding: const EdgeInsets.symmetric(
-        horizontal: 20,
-        vertical: 10,
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Text(
-            title,
-            textAlign: TextAlign.center,
-            style: GoogleFonts.nunito(
-              fontSize: 14,
-              fontWeight: FontWeight.w700,
-            ),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: 20,
+            vertical: 10,
           ),
-          const SizedBox(height: 4),
-          Text(
-            subtitle,
-            textAlign: TextAlign.center,
-            style: GoogleFonts.nunito(
-              fontSize: 12,
-              fontWeight: FontWeight.w400,
-            ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Text(
+                title,
+                textAlign: TextAlign.center,
+                style: GoogleFonts.nunito(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                subtitle,
+                textAlign: TextAlign.center,
+                style: GoogleFonts.nunito(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w400,
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     ),
   );
-}
 
+  }
 }
