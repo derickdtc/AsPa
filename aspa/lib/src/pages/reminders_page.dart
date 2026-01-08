@@ -16,7 +16,6 @@ class RemindersPage extends StatelessWidget {//falta ajustar tamanho e posiciona
         body: SafeArea(
           child: Column(
             children: [
-              // HEADER
               Padding(
                 padding: 
                   const EdgeInsets.symmetric(vertical: 10),
@@ -56,7 +55,6 @@ class RemindersPage extends StatelessWidget {//falta ajustar tamanho e posiciona
 
               const SizedBox(height: 36),
 
-              // MEDICAÇÕES
               _sectionHeader(context, 'Medicações'),
 
               const SizedBox(height: 10),
@@ -88,7 +86,6 @@ class RemindersPage extends StatelessWidget {//falta ajustar tamanho e posiciona
     );
   }
 
-  // ---------- COMPONENTES ----------
 
   Widget _sectionHeader(
     BuildContext context,
