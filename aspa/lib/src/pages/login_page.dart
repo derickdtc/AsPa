@@ -2,7 +2,7 @@ import 'package:aspa/src/pages/home_page.dart';
 import 'package:flutter/material.dart';
 
 class LoginPageWidget extends StatefulWidget {
-  const LoginPageWidget({Key? key}) : super(key: key);
+  const LoginPageWidget({super.key});
 
   static const String routeName = '/loginPage';
 
@@ -18,7 +18,7 @@ class _LoginPageWidgetState extends State<LoginPageWidget> {
   @override
   void initState() {
     super.initState();
-    // Removi o SchedulerBinding que redirecionava para '/register' 
+    // Removi o SchedulerBinding que redirecionava para '/register'
     // para que você possa ver e interagir com esta tela.
   }
 
@@ -37,7 +37,8 @@ class _LoginPageWidgetState extends State<LoginPageWidget> {
         // Adota a cor de fundo do tema ou uma definida pelo contexto
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         appBar: AppBar(
-          backgroundColor: Theme.of(context).colorScheme.primary, // Cor do Contexto
+          backgroundColor:
+              Theme.of(context).colorScheme.primary, // Cor do Contexto
           centerTitle: true,
           leading: IconButton(
             icon: const Icon(Icons.arrow_back_rounded),
@@ -60,7 +61,8 @@ class _LoginPageWidgetState extends State<LoginPageWidget> {
                   'assets/images/icon.png',
                   height: 200, // Ajustado para caber melhor na tela
                   fit: BoxFit.contain,
-                  errorBuilder: (context, error, stackTrace) => const Icon(Icons.person, size: 100),
+                  errorBuilder: (context, error, stackTrace) =>
+                      const Icon(Icons.person, size: 100),
                 ),
                 const SizedBox(height: 32),
 
@@ -89,7 +91,9 @@ class _LoginPageWidgetState extends State<LoginPageWidget> {
                     );
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Theme.of(context).colorScheme.primary, // Cor do Contexto
+                    backgroundColor: Theme.of(context)
+                        .colorScheme
+                        .primary, // Cor do Contexto
                     foregroundColor: Theme.of(context).colorScheme.onPrimary,
                     minimumSize: const Size(316, 60),
                     shape: RoundedRectangleBorder(
@@ -129,14 +133,19 @@ class _LoginPageWidgetState extends State<LoginPageWidget> {
           prefixIcon: Icon(icon, color: Theme.of(context).colorScheme.primary),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
-            borderSide: BorderSide(color: Theme.of(context).colorScheme.outline, width: 2),
+            borderSide: BorderSide(
+                color: Theme.of(context).colorScheme.outline, width: 2),
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
-            borderSide: BorderSide(color: Theme.of(context).colorScheme.primary, width: 3),
+            borderSide: BorderSide(
+                color: Theme.of(context).colorScheme.primary, width: 3),
           ),
           filled: true,
-          fillColor: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
+          fillColor: Theme.of(context)
+              .colorScheme
+              .surfaceContainerHighest
+              .withValues(alpha: 0.3),
         ),
       ),
     );

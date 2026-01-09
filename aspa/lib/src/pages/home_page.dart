@@ -1,3 +1,4 @@
+import 'package:aspa/src/pages/jardineiro_game.dart';
 import 'package:aspa/src/pages/landing_page.dart';
 import 'package:aspa/src/pages/reminders_page.dart';
 import 'package:flutter/material.dart';
@@ -99,7 +100,13 @@ class _HomepageState extends State<Homepage> {
                     context,
                     label: 'Ver Exercícios',
                     icon: Icons.directions_run,
-                    onTap: () {},
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => const JardineiroGame()),
+                      );
+                    },
                   ),
                 ),
                 _buildSectionHeader(context, 'Lembretes'),
@@ -112,10 +119,10 @@ class _HomepageState extends State<Homepage> {
                     icon: Icons.alarm_on_rounded,
                     onTap: () {
                       Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (context) => const RemindersPage()),
-                            );
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => const RemindersPage()),
+                      );
                     },
                   ),
                 ),

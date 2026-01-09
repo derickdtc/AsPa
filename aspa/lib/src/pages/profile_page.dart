@@ -1,6 +1,7 @@
 import 'package:aspa/src/pages/edit_profile_page.dart';
 import 'package:aspa/src/pages/favorites_page.dart';
 import 'package:aspa/src/pages/help_page.dart';
+import 'package:aspa/src/pages/login_page.dart';
 import 'package:aspa/src/pages/privacy_policy_page.dart';
 import 'package:aspa/src/pages/settings_page.dart';
 import 'package:flutter/material.dart';
@@ -164,7 +165,10 @@ class ProfilePage extends StatelessWidget {
                 icon: Icons.logout,
                 label: 'Logout',
                 onTap: () {
-                  print('Realizando Logout...');
+                  Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => const LoginPageWidget()));
                 },
               ),
               const SizedBox(height: 30),

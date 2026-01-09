@@ -1,5 +1,3 @@
-import 'package:aspa/src/pages/home_page.dart';
-// import 'package:aspa/src/pages/login_page.dart';
 import 'package:aspa/src/pages/signup_page.dart';
 import 'package:flutter/material.dart';
 import 'package:aspa/src/pages/login_page.dart';
@@ -108,7 +106,8 @@ class _LandingPageState extends State<LandingPage> {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                  builder: (context) => const LoginPageWidget()),
+                                  builder: (context) =>
+                                      const LoginPageWidget()),
                             );
                           },
                           style: ElevatedButton.styleFrom(
