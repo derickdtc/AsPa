@@ -4,6 +4,8 @@
 <dict>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>jogo de treino vocal</string>
 	<key>CFBundleDisplayName</key>
 	<string>Aspa</string>
 	<key>CFBundleExecutable</key>
