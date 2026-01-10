@@ -15,47 +15,45 @@ class JardineiroGame extends StatefulWidget {
 
 class _JardineiroGameState extends State<JardineiroGame>
     with SingleTickerProviderStateMixin {
-  // Configurações do Jogo
+  // config do jogo
   final int _targetGoal = 10;
   int _currentScore = 0;
   bool _isGameActive = false;
   GameDifficulty _currentDifficulty = GameDifficulty.easy;
   int _moveTimeLimit = 3000;
-  // Áudio
+  // som
   late AudioPlayer _audioPlayer;
   bool _audioInitialized = false;
-  // Controle de Posição
+  // controle de pos(x,y)
   double _top = 0;
   double _left = 0;
   double _flowerSize = 80.0;
 
-  // Animações
+  // animações
   late AnimationController _tapAnimationController;
   bool _showTapEffect = false;
   Offset _tapPosition = Offset.zero;
 
-  // Estatísticas
+  // stats
   int _totalTaps = 0;
   int _successfulTaps = 0;
-  List<double> _reactionTimes = [];
-  Stopwatch _reactionTimer = Stopwatch();
+  final List<double> _reactionTimes = [];
+  final Stopwatch _reactionTimer = Stopwatch();
   Timer? _autoMoveTimer;
   DateTime? _gameStartTime;
 
-  // Para calcular posições aleatórias
   final Random _random = Random();
 
-  // Chave para acessar as dimensões do container do jogo
+  // Key p/ acessar as dimensões do container do jogo
   final GlobalKey _gameContainerKey = GlobalKey();
 
-  // Função auxiliar para criar cores com opacidade
   Color _colorWithOpacity(Color color, double opacity) {
-    return Color.fromRGBO(
-      color.red,
-      color.green,
-      color.blue,
-      opacity.clamp(0.0, 1.0),
-    );
+    final int r = (color.r * 255.0).round().clamp(0, 255);
+    final int g = (color.g * 255.0).round().clamp(0, 255);
+    final int b = (color.b * 255.0).round().clamp(0, 255);
+    final double a = opacity.clamp(0.0, 1.0);
+
+    return Color.fromRGBO(r, g, b, a);
   }
 
   @override
@@ -69,15 +67,13 @@ class _JardineiroGameState extends State<JardineiroGame>
           setState(() => _showTapEffect = false);
         }
       });
-    // Inicializar áudio
+    // inicializar áudio
     _initAudio();
   }
 
   Future<void> _initAudio() async {
     _audioPlayer = AudioPlayer();
-    // Tentar tocar um som vazio para inicializar o plugin nativo
     try {
-      // Use setSource to register the asset without attempting autoplay (better for web)
       await _audioPlayer.setSource(AssetSource('audios/tap.mp3'));
       setState(() {
         _audioInitialized = true;
@@ -88,14 +84,14 @@ class _JardineiroGameState extends State<JardineiroGame>
   }
 
   void _startGame() {
-    // Resetar estatísticas
+    // resetar estatísticas
     _reactionTimes.clear();
     _reactionTimer.reset();
     _totalTaps = 0;
     _successfulTaps = 0;
     _gameStartTime = DateTime.now();
 
-    // Configurar baseado na dificuldade
+    // config baseando na dificuldade
     switch (_currentDifficulty) {
       case GameDifficulty.easy:
         _flowerSize = 80.0;
@@ -114,7 +110,7 @@ class _JardineiroGameState extends State<JardineiroGame>
     setState(() {
       _currentScore = 0;
       _isGameActive = true;
-      // Posição inicial no centro
+      // definindo pos inicial p/ centro
       _top = 0;
       _left = 0;
     });
