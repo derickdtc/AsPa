@@ -3,15 +3,39 @@ import 'package:aspa/src/pages/landing_page.dart';
 import 'package:aspa/src/pages/reminders_page.dart';
 import 'package:flutter/material.dart';
 import 'package:aspa/src/pages/profile_page.dart';
+import '/api_service.dart';
 
 class Homepage extends StatefulWidget {
-  const Homepage({super.key});
+  final int userId;
+
+  const Homepage({super.key, required this.userId});
 
   @override
   State<Homepage> createState() => _HomepageState();
 }
 
 class _HomepageState extends State<Homepage> {
+  final ApiService _api = ApiService();
+  int _streak = 0;
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _carregarDadosPaciente();
+  }
+
+  // busca dados do banco (por enquanto so o streak, posteriormente buscar todas as infos.)
+  void _carregarDadosPaciente() async {
+    final dados = await _api.getPaciente(widget.userId);
+    if (dados != null) {
+      setState(() {
+        _streak = dados['sequencia_dias'];
+        _isLoading = false;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -61,7 +85,8 @@ class _HomepageState extends State<Homepage> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                                builder: (context) => const ProfilePage()),
+                                builder: (context) =>
+                                    ProfilePage(userId: widget.userId)),
                           );
                         },
                         borderRadius: BorderRadius.circular(15),
@@ -84,13 +109,15 @@ class _HomepageState extends State<Homepage> {
                 ),
                 Padding(
                   padding: const EdgeInsets.only(top: 20),
-                  child: _buildSummaryCard(
-                    context,
-                    color: colorScheme.primary,
-                    icon: Icons.celebration,
-                    text: 'Você completou 0 dias seguidos!',
-                    height: 150,
-                  ),
+                  child: _isLoading
+                      ? CircularProgressIndicator()
+                      : _buildSummaryCard(
+                          context,
+                          color: colorScheme.primary,
+                          icon: Icons.celebration,
+                          text: 'Você completou $_streak dias seguidos!',
+                          height: 150,
+                        ),
                 ),
                 _buildSectionHeader(context, 'Exercícios'),
                 _buildSubText(context, 'Você tem 0 exercícios para hoje!'),
