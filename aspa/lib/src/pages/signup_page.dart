@@ -1,4 +1,5 @@
-import 'package:aspa/src/pages/home_page.dart';
+import 'package:aspa/src/pages/home_page_doctor.dart';
+import 'package:aspa/src/pages/home_page_patient.dart';
 import 'package:flutter/material.dart';
 
 enum UserType { paciente, medico }
@@ -152,7 +153,13 @@ class _SignUpPageWidgetState extends State<SignUpPageWidget> {
                   onPressed: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => const Homepage()),
+                      userType == UserType.medico
+                        ? MaterialPageRoute(
+                            builder: (context) => const DoctorHomepage(),
+                          )
+                        : MaterialPageRoute(
+                            builder: (context) => const PatientHomepage(),
+                        ),
                     );
                   },
                   style: ElevatedButton.styleFrom(

@@ -1,4 +1,5 @@
-import 'package:aspa/src/pages/home_page.dart';
+import 'package:aspa/src/pages/home_page_patient.dart';
+import 'package:aspa/src/pages/home_page_doctor.dart';
 import 'package:flutter/material.dart';
 
 class LoginPageWidget extends StatefulWidget {
@@ -87,7 +88,13 @@ class _LoginPageWidgetState extends State<LoginPageWidget> {
                   onPressed: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => const Homepage()),
+                      true  //colocar verificação se é paciente ou medico
+                        ? MaterialPageRoute(
+                            builder: (context) => const PatientHomepage(),
+                          )
+                        : MaterialPageRoute(
+                            builder: (context) => const DoctorHomepage(),
+                        ),
                     );
                   },
                   style: ElevatedButton.styleFrom(

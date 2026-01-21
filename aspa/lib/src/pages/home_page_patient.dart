@@ -4,14 +4,14 @@ import 'package:aspa/src/pages/reminders_page.dart';
 import 'package:flutter/material.dart';
 import 'package:aspa/src/pages/profile_page.dart';
 
-class Homepage extends StatefulWidget {
-  const Homepage({super.key});
+class PatientHomepage extends StatefulWidget {
+  const PatientHomepage({super.key});
 
   @override
-  State<Homepage> createState() => _HomepageState();
+  State<PatientHomepage> createState() => _PatientHomepageState();
 }
 
-class _HomepageState extends State<Homepage> {
+class _PatientHomepageState extends State<PatientHomepage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
