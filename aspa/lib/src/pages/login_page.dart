@@ -1,5 +1,6 @@
 import 'package:aspa/src/pages/home_page.dart';
 import 'package:flutter/material.dart';
+import '/api_service.dart';
 
 class LoginPageWidget extends StatefulWidget {
   const LoginPageWidget({super.key});
@@ -12,8 +13,46 @@ class LoginPageWidget extends StatefulWidget {
 
 class _LoginPageWidgetState extends State<LoginPageWidget> {
   // Adicionado controladores para capturar o texto
-  final TextEditingController _loginController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  final ApiService _api = ApiService();
+  bool _isLoading = false;
+
+  void _fazerLogin() async {
+    setState(() => _isLoading = true);
+
+    final resultado =
+        await _api.login(_emailController.text, _passwordController.text);
+
+    setState(() => _isLoading = false);
+
+    if (resultado != null) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Login realizado com sucesso!')),
+        );
+
+        // NAVEGAÇÃO PARA A HOME
+        // Passamos o ID e o Nome para a próxima tela não precisar carregar tudo de novo
+        Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+                builder: (_) => Homepage(
+                      userId: resultado['id_usuario'],
+                    )));
+      }
+    } else {
+      // ERRO
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Email ou senha inválidos'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
 
   @override
   void initState() {
@@ -24,7 +63,7 @@ class _LoginPageWidgetState extends State<LoginPageWidget> {
 
   @override
   void dispose() {
-    _loginController.dispose();
+    _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
@@ -68,10 +107,11 @@ class _LoginPageWidgetState extends State<LoginPageWidget> {
 
                 // Chamada dos inputs agora funcionais
                 _buildInput(
-                  controller: _loginController,
-                  label: 'Login',
-                  hint: 'Digite seu usuário',
+                  controller: _emailController,
+                  label: 'Email',
+                  hint: 'Digite seu email',
                   icon: Icons.person_outline,
+                  isEmail: true,
                 ),
                 const SizedBox(height: 16),
                 _buildInput(
@@ -79,17 +119,12 @@ class _LoginPageWidgetState extends State<LoginPageWidget> {
                   label: 'Senha',
                   hint: 'Digite sua senha',
                   icon: Icons.lock_outline,
-                  isPassword: true,
+                  isObscure: true,
                 ),
                 const SizedBox(height: 32),
 
                 ElevatedButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => const Homepage()),
-                    );
-                  },
+                  onPressed: _isLoading ? null : _fazerLogin,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Theme.of(context)
                         .colorScheme
@@ -100,10 +135,14 @@ class _LoginPageWidgetState extends State<LoginPageWidget> {
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                  child: const Text(
-                    'Entrar',
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                  ),
+                  child: _isLoading
+                      ? CircularProgressIndicator(
+                          color: Theme.of(context).colorScheme.onPrimary)
+                      : Text(
+                          'Entrar',
+                          style: TextStyle(
+                              fontSize: 20, fontWeight: FontWeight.bold),
+                        ),
                 ),
               ],
             ),
@@ -119,18 +158,32 @@ class _LoginPageWidgetState extends State<LoginPageWidget> {
     required String label,
     required String hint,
     required IconData icon,
-    bool isPassword = false,
+    bool isObscure = false,
+    bool isEmail = false,
   }) {
     return SizedBox(
       width: 316,
       child: TextField(
         controller: controller,
-        obscureText: isPassword,
+        obscureText: isObscure,
+        keyboardType: isEmail ? TextInputType.emailAddress : TextInputType.text,
         style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
         decoration: InputDecoration(
           labelText: label,
           hintText: hint,
           prefixIcon: Icon(icon, color: Theme.of(context).colorScheme.primary),
+          suffixIcon: isEmail
+              ? null
+              : IconButton(
+                  onPressed: () {
+                    setState(() {
+                      isObscure = !isObscure;
+                    });
+                  },
+                  icon: Icon(
+                    isObscure ? Icons.visibility : Icons.visibility_off,
+                  ),
+                ),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
             borderSide: BorderSide(
