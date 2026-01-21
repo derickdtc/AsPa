@@ -1,6 +1,8 @@
 import 'package:aspa/src/pages/home_page.dart';
 import 'package:flutter/material.dart';
 
+enum UserType { paciente, medico }
+
 class SignUpPageWidget extends StatefulWidget {
   const SignUpPageWidget({super.key});
 
@@ -13,6 +15,9 @@ class SignUpPageWidget extends StatefulWidget {
 class _SignUpPageWidgetState extends State<SignUpPageWidget> {
   final TextEditingController _signUpController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  UserType userType = UserType.paciente;
+
+  final TextEditingController _crmController = TextEditingController();
 
   @override
   void initState() {
@@ -23,6 +28,7 @@ class _SignUpPageWidgetState extends State<SignUpPageWidget> {
   void dispose() {
     _signUpController.dispose();
     _passwordController.dispose();
+    _crmController.dispose();
     super.dispose();
   }
 
@@ -91,9 +97,48 @@ class _SignUpPageWidgetState extends State<SignUpPageWidget> {
                   icon: Icons.lock_outline,
                   isPassword: true,
                 ),
+                SizedBox(
+                  width: 316,
+                  child: Column(
+                    children: [
+                      const SizedBox(height: 8),
+                      const Text(
+                        'Eu sou: ',
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                      ),
+                      const SizedBox(height: 8),
+
+                      RadioGroup<UserType>(
+                        groupValue: userType,
+                        onChanged: (value) {
+                          setState(() {
+                            userType = value!;
+                          });
+                        },
+                        child: Row(
+                          children: const [
+                            Expanded(
+                              child: RadioListTile<UserType>(
+                                title: Text('Paciente'),
+                                value: UserType.paciente,
+                              ),
+                            ),
+                            Expanded(
+                              child: RadioListTile<UserType>(
+                                title: Text('Médico'),
+                                value: UserType.medico,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                
                 
                 const SizedBox(height: 16),
-                if(false)
+                if(userType == UserType.medico)
                   _buildInput(
                     controller: _passwordController,
                     label: 'CRM',
