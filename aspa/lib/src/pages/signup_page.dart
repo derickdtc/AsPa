@@ -67,36 +67,6 @@ class _SignUpPageWidgetState extends State<SignUpPageWidget> {
                 ),
                 const SizedBox(height: 32),
 
-                _buildInput(
-                  controller: _signUpController,
-                  label: 'Login',
-                  hint: 'Digite seu usuário',
-                  icon: Icons.person_outline,
-                ),
-                const SizedBox(height: 16),
-                _buildInput(
-                  controller: _passwordController,
-                  label: 'E-mail',
-                  hint: 'Digite seu e-mail',
-                  icon: Icons.mail,
-                  isPassword: true,
-                ),
-                const SizedBox(height: 16),
-                _buildInput(
-                  controller: _passwordController,
-                  label: 'Senha',
-                  hint: 'Digite sua senha',
-                  icon: Icons.lock_outline,
-                  isPassword: true,
-                ),
-                const SizedBox(height: 16),
-                _buildInput(
-                  controller: _passwordController,
-                  label: 'Confirmar senha',
-                  hint: 'Digite sua senha novamente',
-                  icon: Icons.lock_outline,
-                  isPassword: true,
-                ),
                 SizedBox(
                   width: 316,
                   child: Column(
@@ -136,6 +106,36 @@ class _SignUpPageWidgetState extends State<SignUpPageWidget> {
                   ),
                 ),
                 
+                _buildInput(
+                  controller: _signUpController,
+                  label: 'Login',
+                  hint: 'Digite seu usuário',
+                  icon: Icons.person_outline,
+                ),
+                const SizedBox(height: 16),
+                _buildInput(
+                  controller: _passwordController,
+                  label: 'E-mail',
+                  hint: 'Digite seu e-mail',
+                  icon: Icons.mail,
+                  isPassword: true,
+                ),
+                const SizedBox(height: 16),
+                _buildInput(
+                  controller: _passwordController,
+                  label: 'Senha',
+                  hint: 'Digite sua senha',
+                  icon: Icons.lock_outline,
+                  isPassword: true,
+                ),
+                const SizedBox(height: 16),
+                _buildInput(
+                  controller: _passwordController,
+                  label: 'Confirmar senha',
+                  hint: 'Digite sua senha novamente',
+                  icon: Icons.lock_outline,
+                  isPassword: true,
+                ),      
                 
                 const SizedBox(height: 16),
                 if(userType == UserType.medico)
