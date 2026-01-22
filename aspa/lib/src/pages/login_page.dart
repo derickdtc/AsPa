@@ -1,5 +1,7 @@
-import 'package:aspa/src/pages/home_page.dart';
+import 'package:aspa/src/pages/home_page_medico.dart';
+import 'package:aspa/src/pages/home_page_paciente.dart';
 import 'package:flutter/material.dart';
+import '/api_service.dart';
 
 class LoginPageWidget extends StatefulWidget {
   const LoginPageWidget({super.key});
@@ -11,20 +13,56 @@ class LoginPageWidget extends StatefulWidget {
 }
 
 class _LoginPageWidgetState extends State<LoginPageWidget> {
-  // Adicionado controladores para capturar o texto
-  final TextEditingController _loginController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  final ApiService _api = ApiService();
+  bool _isLoading = false;
+
+  void _fazerLogin() async {
+    setState(() => _isLoading = true);
+
+    final resultado =
+        await _api.login(_emailController.text, _passwordController.text);
+
+    setState(() => _isLoading = false);
+
+    if (resultado != null) {
+      if (mounted) {
+        final String tipo = resultado['tipo_usuario'] ?? 'paciente';
+        final String nome = resultado['nome'];
+        final int id = resultado['id_usuario'];
+
+        Widget proximaTela;
+
+        if (tipo == 'medico') {
+          proximaTela = HomePageMedico(userId: id, userName: nome);
+        } else {
+          proximaTela = Homepage(userId: id);
+        }
+
+        Navigator.pushReplacement(
+            context, MaterialPageRoute(builder: (_) => proximaTela));
+      }
+    } else {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Email ou senha inválidos'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
 
   @override
   void initState() {
     super.initState();
-    // Removi o SchedulerBinding que redirecionava para '/register'
-    // para que você possa ver e interagir com esta tela.
   }
 
   @override
   void dispose() {
-    _loginController.dispose();
+    _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
@@ -34,11 +72,9 @@ class _LoginPageWidgetState extends State<LoginPageWidget> {
     return GestureDetector(
       onTap: () => FocusScope.of(context).unfocus(),
       child: Scaffold(
-        // Adota a cor de fundo do tema ou uma definida pelo contexto
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         appBar: AppBar(
-          backgroundColor:
-              Theme.of(context).colorScheme.primary, // Cor do Contexto
+          backgroundColor: Theme.of(context).colorScheme.primary,
           centerTitle: true,
           leading: IconButton(
             icon: const Icon(Icons.arrow_back_rounded),
@@ -50,7 +86,6 @@ class _LoginPageWidgetState extends State<LoginPageWidget> {
           ),
           elevation: 2,
         ),
-        // Centralização Total
         body: Center(
           child: SingleChildScrollView(
             padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -59,19 +94,20 @@ class _LoginPageWidgetState extends State<LoginPageWidget> {
               children: [
                 Image.asset(
                   'assets/images/icon.png',
-                  height: 200, // Ajustado para caber melhor na tela
+                  height: 200,
                   fit: BoxFit.contain,
                   errorBuilder: (context, error, stackTrace) =>
                       const Icon(Icons.person, size: 100),
                 ),
                 const SizedBox(height: 32),
 
-                // Chamada dos inputs agora funcionais
+                // chamada dos inputs agora funcionais
                 _buildInput(
-                  controller: _loginController,
-                  label: 'Login',
-                  hint: 'Digite seu usuário',
+                  controller: _emailController,
+                  label: 'Email',
+                  hint: 'Digite seu email',
                   icon: Icons.person_outline,
+                  isEmail: true,
                 ),
                 const SizedBox(height: 16),
                 _buildInput(
@@ -79,31 +115,28 @@ class _LoginPageWidgetState extends State<LoginPageWidget> {
                   label: 'Senha',
                   hint: 'Digite sua senha',
                   icon: Icons.lock_outline,
-                  isPassword: true,
+                  isObscure: true,
                 ),
                 const SizedBox(height: 32),
 
                 ElevatedButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => const Homepage()),
-                    );
-                  },
+                  onPressed: _isLoading ? null : _fazerLogin,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Theme.of(context)
-                        .colorScheme
-                        .primary, // Cor do Contexto
+                    backgroundColor: Theme.of(context).colorScheme.primary,
                     foregroundColor: Theme.of(context).colorScheme.onPrimary,
                     minimumSize: const Size(316, 60),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                  child: const Text(
-                    'Entrar',
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                  ),
+                  child: _isLoading
+                      ? CircularProgressIndicator(
+                          color: Theme.of(context).colorScheme.onPrimary)
+                      : Text(
+                          'Entrar',
+                          style: TextStyle(
+                              fontSize: 20, fontWeight: FontWeight.bold),
+                        ),
                 ),
               ],
             ),
@@ -113,24 +146,37 @@ class _LoginPageWidgetState extends State<LoginPageWidget> {
     );
   }
 
-  // Widget de Input que permite escrever e usa cores do contexto
   Widget _buildInput({
     required TextEditingController controller,
     required String label,
     required String hint,
     required IconData icon,
-    bool isPassword = false,
+    bool isObscure = false,
+    bool isEmail = false,
   }) {
     return SizedBox(
       width: 316,
       child: TextField(
         controller: controller,
-        obscureText: isPassword,
+        obscureText: isObscure,
+        keyboardType: isEmail ? TextInputType.emailAddress : TextInputType.text,
         style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
         decoration: InputDecoration(
           labelText: label,
           hintText: hint,
           prefixIcon: Icon(icon, color: Theme.of(context).colorScheme.primary),
+          suffixIcon: isEmail
+              ? null
+              : IconButton(
+                  onPressed: () {
+                    setState(() {
+                      isObscure = !isObscure;
+                    });
+                  },
+                  icon: Icon(
+                    isObscure ? Icons.visibility : Icons.visibility_off,
+                  ),
+                ),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
             borderSide: BorderSide(

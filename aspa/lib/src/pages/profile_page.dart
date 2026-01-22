@@ -5,9 +5,52 @@ import 'package:aspa/src/pages/login_page.dart';
 import 'package:aspa/src/pages/privacy_policy_page.dart';
 import 'package:aspa/src/pages/settings_page.dart';
 import 'package:flutter/material.dart';
+import '/api_service.dart';
 
-class ProfilePage extends StatelessWidget {
-  const ProfilePage({super.key});
+class ProfilePage extends StatefulWidget {
+  final int userId;
+  final bool isMedico;
+  const ProfilePage({super.key, required this.userId, this.isMedico = false});
+
+  @override
+  State<ProfilePage> createState() => _ProfilePageState();
+}
+
+class _ProfilePageState extends State<ProfilePage> {
+  final ApiService _api = ApiService();
+  String _nome = '';
+
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _carregarDados();
+  }
+
+  void _carregarDados() async {
+    Map<String, dynamic>? dados;
+
+    // diferenciando paciente de médico
+    if (widget.isMedico) {
+      dados = await _api.getMedico(widget.userId);
+    } else {
+      dados = await _api.getPaciente(widget.userId);
+    }
+
+    if (dados != null) {
+      if (mounted) {
+        setState(() {
+          _nome = dados?['nome'];
+
+          _isLoading = false;
+        });
+      }
+    } else {
+      // se der erro, para o loading pra não travar a tela
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -96,14 +139,16 @@ class ProfilePage extends StatelessWidget {
               ),
               Padding(
                 padding: const EdgeInsetsDirectional.fromSTEB(0, 20, 0, 10),
-                child: Text(
-                  'Dino Silva Sauro',
-                  style: textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.w500,
-                    color: colorScheme.onSurface,
-                    fontSize: 24,
-                  ),
-                ),
+                child: _isLoading
+                    ? CircularProgressIndicator()
+                    : Text(
+                        _nome,
+                        style: textTheme.headlineSmall?.copyWith(
+                          fontWeight: FontWeight.w500,
+                          color: colorScheme.onSurface,
+                          fontSize: 24,
+                        ),
+                      ),
               ),
               _buildMenuItem(
                 context,

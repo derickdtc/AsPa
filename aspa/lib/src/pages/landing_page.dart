@@ -143,7 +143,7 @@ class _LandingPageState extends State<LandingPage> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                                builder: (context) => const SignupPage()),
+                                builder: (context) => const SignUpPageWidget()),
                           );
                         },
                         style: ElevatedButton.styleFrom(
