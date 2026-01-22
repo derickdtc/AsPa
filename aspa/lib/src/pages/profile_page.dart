@@ -9,8 +9,8 @@ import '/api_service.dart';
 
 class ProfilePage extends StatefulWidget {
   final int userId;
-
-  const ProfilePage({super.key, required this.userId});
+  final bool isMedico;
+  const ProfilePage({super.key, required this.userId, this.isMedico = false});
 
   @override
   State<ProfilePage> createState() => _ProfilePageState();
@@ -19,22 +19,36 @@ class ProfilePage extends StatefulWidget {
 class _ProfilePageState extends State<ProfilePage> {
   final ApiService _api = ApiService();
   String _nome = '';
+
   bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    _carregarDadosPaciente();
+    _carregarDados();
   }
 
-  // buscando dados do banco
-  void _carregarDadosPaciente() async {
-    final dados = await _api.getPaciente(widget.userId);
+  void _carregarDados() async {
+    Map<String, dynamic>? dados;
+
+    // diferenciando paciente de médico
+    if (widget.isMedico) {
+      dados = await _api.getMedico(widget.userId);
+    } else {
+      dados = await _api.getPaciente(widget.userId);
+    }
+
     if (dados != null) {
-      setState(() {
-        _nome = dados['nome'];
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _nome = dados?['nome'];
+
+          _isLoading = false;
+        });
+      }
+    } else {
+      // se der erro, para o loading pra não travar a tela
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 

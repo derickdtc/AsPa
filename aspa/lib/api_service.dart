@@ -10,7 +10,7 @@ class ApiService {
   static const String baseUrl = "http://127.0.0.1:8000";
 
   Future<Map<String, dynamic>?> login(String email, String senha) async {
-    final url = Uri.parse('$baseUrl/login'); // Chama a nova rota
+    final url = Uri.parse('$baseUrl/login'); // chamando a nova rota
 
     try {
       final response = await http.post(
@@ -23,21 +23,21 @@ class ApiService {
       );
 
       if (response.statusCode == 200) {
-        // Login Sucesso: Retorna os dados do usuário (ID, Nome)
+        // Se deu bom: retorna os dados do usuário (ID, nome)
         return jsonDecode(response.body);
       } else {
-        // Login Falhou (401)
-        print("Erro Login: ${response.body}");
+        // Se deu ruim: (401)
+        print("Erro no login: ${response.body}");
         return null;
       }
     } catch (e) {
-      print("Erro de Conexão: $e");
+      print("Erro de conexão: $e");
       return null;
     }
   }
 
-  Future<bool> cadastrarPaciente(
-      String nome, String email, String senha) async {
+  Future<Map<String, dynamic>?> cadastrarPaciente(
+      String nome, String email, String senha, String dataDiagnostico) async {
     final url = Uri.parse('$baseUrl/pacientes/');
 
     try {
@@ -48,25 +48,67 @@ class ApiService {
           "nome": nome,
           "email": email,
           "senha": senha,
-          "data_diagnostico":
-              DateTime.now().toIso8601String().substring(0, 10) // Data de hoje
+          "data_diagnostico": dataDiagnostico
         }),
       );
 
       if (response.statusCode == 200) {
-        print("Sucesso: ${response.body}");
-        return true; // Deu certo!
+        return jsonDecode(response.body);
       } else {
-        print("Erro API: ${response.body}");
-        return false; // Deu erro no back (ex: email duplicado)
+        print("Erro de API: ${response.body}");
+        return null;
       }
     } catch (e) {
-      print("Erro de Conexão: $e");
-      return false; // Servidor desligado ou IP errado
+      print("Erro de conexão: $e");
+      return null;
     }
   }
 
-  // Adicione dentro da class ApiService
+  Future<Map<String, dynamic>?> cadastrarMedico(
+      String nome, String email, String senha, String crm) async {
+    final url = Uri.parse('$baseUrl/medicos/');
+
+    try {
+      final response = await http.post(
+        url,
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({
+          "nome": nome,
+          "email": email,
+          "senha": senha,
+          "registro_profissional": crm,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        print("Erro de API: ${response.body}");
+        return null; // Deu ruim
+      }
+    } catch (e) {
+      print("Erro de conexão: $e");
+      return null; // Server desligado ou IP errado
+    }
+  }
+
+  Future<Map<String, dynamic>?> getMedico(int id) async {
+    final url = Uri.parse('$baseUrl/medicos/$id');
+
+    try {
+      final response = await http.get(url);
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        return null;
+      }
+    } catch (e) {
+      print("Erro ao buscar médico: $e");
+      return null;
+    }
+  }
+
   Future<Map<String, dynamic>?> getPaciente(int id) async {
     final url = Uri.parse('$baseUrl/pacientes/$id');
 
