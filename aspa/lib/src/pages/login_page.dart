@@ -1,4 +1,5 @@
-import 'package:aspa/src/pages/home_page.dart';
+import 'package:aspa/src/pages/home_page_medico.dart';
+import 'package:aspa/src/pages/home_page_paciente.dart';
 import 'package:flutter/material.dart';
 import '/api_service.dart';
 
@@ -12,7 +13,6 @@ class LoginPageWidget extends StatefulWidget {
 }
 
 class _LoginPageWidgetState extends State<LoginPageWidget> {
-  // Adicionado controladores para capturar o texto
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final ApiService _api = ApiService();
@@ -28,21 +28,22 @@ class _LoginPageWidgetState extends State<LoginPageWidget> {
 
     if (resultado != null) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Login realizado com sucesso!')),
-        );
+        final String tipo = resultado['tipo_usuario'] ?? 'paciente';
+        final String nome = resultado['nome'];
+        final int id = resultado['id_usuario'];
 
-        // NAVEGAÇÃO PARA A HOME
-        // Passamos o ID e o Nome para a próxima tela não precisar carregar tudo de novo
+        Widget proximaTela;
+
+        if (tipo == 'medico') {
+          proximaTela = HomePageMedico(userId: id, userName: nome);
+        } else {
+          proximaTela = Homepage(userId: id);
+        }
+
         Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-                builder: (_) => Homepage(
-                      userId: resultado['id_usuario'],
-                    )));
+            context, MaterialPageRoute(builder: (_) => proximaTela));
       }
     } else {
-      // ERRO
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -57,8 +58,6 @@ class _LoginPageWidgetState extends State<LoginPageWidget> {
   @override
   void initState() {
     super.initState();
-    // Removi o SchedulerBinding que redirecionava para '/register'
-    // para que você possa ver e interagir com esta tela.
   }
 
   @override
@@ -73,11 +72,9 @@ class _LoginPageWidgetState extends State<LoginPageWidget> {
     return GestureDetector(
       onTap: () => FocusScope.of(context).unfocus(),
       child: Scaffold(
-        // Adota a cor de fundo do tema ou uma definida pelo contexto
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         appBar: AppBar(
-          backgroundColor:
-              Theme.of(context).colorScheme.primary, // Cor do Contexto
+          backgroundColor: Theme.of(context).colorScheme.primary,
           centerTitle: true,
           leading: IconButton(
             icon: const Icon(Icons.arrow_back_rounded),
@@ -89,7 +86,6 @@ class _LoginPageWidgetState extends State<LoginPageWidget> {
           ),
           elevation: 2,
         ),
-        // Centralização Total
         body: Center(
           child: SingleChildScrollView(
             padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -98,14 +94,14 @@ class _LoginPageWidgetState extends State<LoginPageWidget> {
               children: [
                 Image.asset(
                   'assets/images/icon.png',
-                  height: 200, // Ajustado para caber melhor na tela
+                  height: 200,
                   fit: BoxFit.contain,
                   errorBuilder: (context, error, stackTrace) =>
                       const Icon(Icons.person, size: 100),
                 ),
                 const SizedBox(height: 32),
 
-                // Chamada dos inputs agora funcionais
+                // chamada dos inputs agora funcionais
                 _buildInput(
                   controller: _emailController,
                   label: 'Email',
@@ -126,9 +122,7 @@ class _LoginPageWidgetState extends State<LoginPageWidget> {
                 ElevatedButton(
                   onPressed: _isLoading ? null : _fazerLogin,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Theme.of(context)
-                        .colorScheme
-                        .primary, // Cor do Contexto
+                    backgroundColor: Theme.of(context).colorScheme.primary,
                     foregroundColor: Theme.of(context).colorScheme.onPrimary,
                     minimumSize: const Size(316, 60),
                     shape: RoundedRectangleBorder(
@@ -152,7 +146,6 @@ class _LoginPageWidgetState extends State<LoginPageWidget> {
     );
   }
 
-  // Widget de Input que permite escrever e usa cores do contexto
   Widget _buildInput({
     required TextEditingController controller,
     required String label,
