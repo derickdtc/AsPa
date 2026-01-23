@@ -83,7 +83,7 @@ class _SignUpPageWidgetState extends State<SignUpPageWidget> {
               MaterialPageRoute(
                   builder: (_) => HomePageMedico(
                         userId: resultado?['id_usuario'],
-                        userName: resultado?['nome'],
+                        userName: _nomeController.text,
                       )));
         }
       }
