@@ -1,8 +1,7 @@
-import 'package:aspa/src/pages/landing_page.dart';
 import 'package:flutter/material.dart';
-import 'package:aspa/src/pages/profile_page.dart';
+import 'package:flutter_modular/flutter_modular.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '/api_service.dart';
+import '../controllers/home_medico_controller.dart';
 
 class HomePageMedico extends StatefulWidget {
   final int userId;
@@ -16,27 +15,12 @@ class HomePageMedico extends StatefulWidget {
 }
 
 class _HomePageMedicoState extends State<HomePageMedico> {
-  final ApiService _api = ApiService();
-  String _crm = "Carregando..."; // só p não ficar nada
-  bool _isLoading = true;
+  final HomeMedicoController controller = Modular.get<HomeMedicoController>();
 
   @override
   void initState() {
     super.initState();
-    _carregarDadosMedico();
-  }
-
-  void _carregarDadosMedico() async {
-    final dados = await _api.getMedico(widget.userId);
-    if (dados != null) {
-      setState(() {
-        // _nome = dados['nome'];
-        _crm = dados['crm'] ?? '';
-        _isLoading = false;
-      });
-    } else {
-      setState(() => _isLoading = false);
-    }
+    controller.carregarDadosMedico(widget.userId);
   }
 
   @override
@@ -44,140 +28,141 @@ class _HomePageMedicoState extends State<HomePageMedico> {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    return Scaffold(
-      backgroundColor: colorScheme.surface,
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 10),
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.max,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.only(top: 20),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      InkWell(
-                        onTap: () {
-                          Navigator.pushReplacement(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) => const LandingPage()),
-                          );
-                        },
-                        borderRadius: BorderRadius.circular(15),
-                        child: Container(
-                          width: 48,
-                          height: 48,
-                          decoration: BoxDecoration(
-                            color: colorScheme.secondary,
-                            borderRadius: BorderRadius.circular(15),
-                          ),
-                          child: Icon(
-                            Icons.logout_outlined,
-                            color: colorScheme.onSecondary,
-                            size: 28,
-                          ),
-                        ),
-                      ),
-                      // Ícone de Perfil
-                      InkWell(
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) => ProfilePage(
-                                      userId: widget.userId,
-                                      isMedico: true,
-                                    )),
-                          );
-                        },
-                        borderRadius: BorderRadius.circular(15),
-                        child: Container(
-                          width: 48,
-                          height: 48,
-                          decoration: BoxDecoration(
-                            color: colorScheme.secondary,
-                            borderRadius: BorderRadius.circular(15),
-                          ),
-                          child: Icon(
-                            Icons.person,
-                            color: colorScheme.onSecondary,
-                            size: 28,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 30),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 10),
+    return ListenableBuilder(
+        listenable: controller,
+        builder: (context, child) {
+          return Scaffold(
+            backgroundColor: colorScheme.surface,
+            body: SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 10),
+                child: SingleChildScrollView(
                   child: Column(
+                    mainAxisSize: MainAxisSize.max,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        'Olá, Dr(a). ${widget.userName}',
-                        style: GoogleFonts.leagueSpartan(
-                          fontSize: 28,
-                          fontWeight: FontWeight.bold,
-                          color: colorScheme.onSurface,
+                      Padding(
+                        padding: const EdgeInsets.only(top: 20),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            InkWell(
+                              onTap: () {
+                                Modular.to.navigate('/landing');
+                              },
+                              borderRadius: BorderRadius.circular(15),
+                              child: Container(
+                                width: 48,
+                                height: 48,
+                                decoration: BoxDecoration(
+                                  color: colorScheme.secondary,
+                                  borderRadius: BorderRadius.circular(15),
+                                ),
+                                child: Icon(
+                                  Icons.logout_outlined,
+                                  color: colorScheme.onSecondary,
+                                  size: 28,
+                                ),
+                              ),
+                            ),
+                            // Ícone de Perfil
+                            InkWell(
+                              onTap: () {
+                                Modular.to.pushNamed('/profile', arguments: {
+                                  'id': widget.userId,
+                                  'isMedico': true,
+                                });
+                              },
+                              borderRadius: BorderRadius.circular(15),
+                              child: Container(
+                                width: 48,
+                                height: 48,
+                                decoration: BoxDecoration(
+                                  color: colorScheme.secondary,
+                                  borderRadius: BorderRadius.circular(15),
+                                ),
+                                child: Icon(
+                                  Icons.person,
+                                  color: colorScheme.onSecondary,
+                                  size: 28,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                      Text(
-                        'CRM: $_crm',
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: colorScheme.secondary,
+                      const SizedBox(height: 30),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 10),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Olá, Dr(a). ${widget.userName}',
+                              style: GoogleFonts.leagueSpartan(
+                                fontSize: 28,
+                                fontWeight: FontWeight.bold,
+                                color: colorScheme.onSurface,
+                              ),
+                            ),
+                            controller.isLoading
+                                ? const SizedBox(
+                                    height: 20,
+                                    width: 20,
+                                    child: CircularProgressIndicator(
+                                        strokeWidth: 2))
+                                : Text(
+                                    'CRM: ${controller.crm}',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      color: colorScheme.secondary,
+                                    ),
+                                  ),
+                          ],
                         ),
                       ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 30),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 10),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          'Pacientes',
-                          style: GoogleFonts.leagueSpartan(
-                            fontSize: 24,
-                            fontWeight: FontWeight.w500,
-                          ),
+                      const SizedBox(height: 30),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 10),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                'Pacientes',
+                                style: GoogleFonts.leagueSpartan(
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                            InkWell(
+                              onTap: () {
+                                // logica p/ adicionar paciente futuramente
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                        content: Text(
+                                            "Calm Down Pepperoni, isso vai ser implementado ainda")));
+                              },
+                              borderRadius: BorderRadius.circular(20),
+                              child: Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                    color: colorScheme.primary
+                                        .withValues(alpha: 0.1),
+                                    shape: BoxShape.circle),
+                                child: Icon(
+                                  Icons.add,
+                                  color: colorScheme.primary,
+                                  size: 28,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                      InkWell(
-                        onTap: () {
-                          // logica p/ adicionar paciente futuramente
-                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                              content: Text(
-                                  "Calm Down Pepperoni, isso vai ser implementado ainda")));
-                        },
-                        borderRadius: BorderRadius.circular(20),
-                        child: Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                              color: colorScheme.primary.withValues(alpha: 0.1),
-                              shape: BoxShape.circle),
-                          child: Icon(
-                            Icons.add,
-                            color: colorScheme.primary,
-                            size: 28,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.only(top: 20),
-                  child: _isLoading
-                      ? const Center(child: CircularProgressIndicator())
-                      : Column(
+                      Padding(
+                        padding: const EdgeInsets.only(top: 20),
+                        child: Column(
                           children: [
                             // alterar para pacientes reais posteriormente
                             _buildActionCard(
@@ -210,14 +195,15 @@ class _HomePageMedicoState extends State<HomePageMedico> {
                             ),
                           ],
                         ),
+                      ),
+                      const SizedBox(height: 40),
+                    ],
+                  ),
                 ),
-                const SizedBox(height: 40),
-              ],
+              ),
             ),
-          ),
-        ),
-      ),
-    );
+          );
+        });
   }
 
   Widget _buildActionCard(

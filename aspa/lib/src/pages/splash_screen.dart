@@ -1,6 +1,6 @@
 import 'dart:async'; // Para o Timer
-import 'package:aspa/src/pages/landing_page.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_modular/flutter_modular.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -15,9 +15,7 @@ class _SplashScreenState extends State<SplashScreen> {
     super.initState();
     Timer(const Duration(seconds: 3), () {
       if (mounted) {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (context) => const LandingPage()),
-        );
+        Modular.to.navigate('/landing');
       }
     });
   }

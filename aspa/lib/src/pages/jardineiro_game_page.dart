@@ -79,7 +79,7 @@ class _JardineiroGameState extends State<JardineiroGame>
         _audioInitialized = true;
       });
     } catch (e) {
-      print('Erro: $e');
+      // print('Erro: $e');
     }
   }
 
@@ -270,7 +270,7 @@ class _JardineiroGameState extends State<JardineiroGame>
     try {
       await _audioPlayer.play(AssetSource('audios/$soundFileName'));
     } catch (e) {
-      print('Erro "$soundFileName": $e'); // acho q n vai dar mais ent tanto faz
+      // print('Erro "$soundFileName": $e'); // acho q n vai dar mais ent tanto faz
     }
   }
 
