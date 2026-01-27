@@ -1,135 +1,71 @@
-import 'package:aspa/src/pages/home_page_medico.dart';
-import 'package:aspa/src/pages/home_page_paciente.dart';
 import 'package:flutter/material.dart';
-// ignore: unused_import
-import 'package:http/http.dart';
-import '/api_service.dart';
-
-enum UserType { paciente, medico }
+import 'package:flutter_modular/flutter_modular.dart';
+import '../controllers/signup_controller.dart';
 
 class SignUpPageWidget extends StatefulWidget {
   const SignUpPageWidget({super.key});
-
-  static const String routeName = '/SignUpPage';
 
   @override
   State<SignUpPageWidget> createState() => _SignUpPageWidgetState();
 }
 
 class _SignUpPageWidgetState extends State<SignUpPageWidget> {
+  final SignUpController controller = Modular.get<SignUpController>();
+
   final _nomeController = TextEditingController();
   final _emailController = TextEditingController();
   final _senhaController = TextEditingController();
   final _senhaConfirmarController = TextEditingController();
-  final _dataDiagnosticoController = TextEditingController();
   final _crmController = TextEditingController();
-  final ApiService _api = ApiService();
-  UserType userType = UserType.paciente;
-  // ignore: unused_field
-  bool _isLoading = false;
-  DateTime? _dataSelecionada;
+  final _dataDisplayController = TextEditingController();
 
-  void _fazerCadastro() async {
-    setState(() => _isLoading = true);
-    final Map<String, dynamic>? resultado;
+  @override
+  void initState() {
+    super.initState();
+    controller.addListener(_onControllerChange);
+  }
 
-    if (userType == UserType.paciente) {
-      // verifica se a pessoa selecionou a data
-      if (_dataSelecionada == null) {
-        setState(() => _isLoading = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content: Text('Selecione a data do diagnóstico!'),
-              backgroundColor: Colors.red),
-        );
-        return;
-      }
-
-      String dataParaAPI = _dataSelecionada!.toIso8601String().substring(0, 10);
-
-      resultado = await _api.cadastrarPaciente(
-        _nomeController.text,
-        _emailController.text,
-        _senhaController.text,
-        dataParaAPI,
+  void _onControllerChange() {
+    if (controller.errorMessage != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+            content: Text(controller.errorMessage!),
+            backgroundColor: Colors.red),
       );
-    } else {
-      resultado = await _api.cadastrarMedico(
-        _nomeController.text,
-        _emailController.text,
-        _senhaController.text,
-        _crmController.text,
-      );
+      controller.errorMessage = null;
     }
 
-    setState(() => _isLoading = false);
-
-    if (resultado != null) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Cadastro realizado com sucesso!')),
-        );
-
-        if (userType == UserType.paciente) {
-          Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(
-                  builder: (_) => Homepage(
-                        userId: resultado?['id_usuario'],
-                      )));
-        } else {
-          Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(
-                  builder: (_) => HomePageMedico(
-                        userId: resultado?['id_usuario'],
-                        userName: _nomeController.text,
-                      )));
-        }
-      }
-    } else {
-      // ERRO
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Há dados inválidos'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
+    // att o texto da data se ela mudar no controller
+    if (controller.selectedDate != null) {
+      final d = controller.selectedDate!;
+      _dataDisplayController.text =
+          "${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}/${d.year}";
     }
   }
 
   Future<void> _abrirCalendario() async {
     final DateTime? dataEscolhida = await showDatePicker(
       context: context,
-      initialDate: DateTime.now(), // começa selecionado no dia presente
-      firstDate: DateTime(1940), // data mínima permitida p cadastro
-      lastDate:
-          DateTime.now(), // data maxima sempre será o dia atual do cadastro
+      initialDate: DateTime.now(),
+      firstDate: DateTime(1940),
+      lastDate: DateTime.now(),
     );
 
     if (dataEscolhida != null) {
-      setState(() {
-        _dataSelecionada = dataEscolhida;
-        // mostra pro usuário no formato DD/MM/AAAA
-        _dataDiagnosticoController.text =
-            "${dataEscolhida.day.toString().padLeft(2, '0')}/${dataEscolhida.month.toString().padLeft(2, '0')}/${dataEscolhida.year}";
-      });
+      // passa a data para o controller guardar
+      controller.setSelectedDate(dataEscolhida);
     }
   }
 
   @override
-  void initState() {
-    super.initState();
-  }
-
-  @override
   void dispose() {
+    controller.removeListener(_onControllerChange);
     _nomeController.dispose();
     _emailController.dispose();
     _senhaController.dispose();
+    _senhaConfirmarController.dispose();
     _crmController.dispose();
+    _dataDisplayController.dispose();
     super.dispose();
   }
 
@@ -144,7 +80,7 @@ class _SignUpPageWidgetState extends State<SignUpPageWidget> {
           centerTitle: true,
           leading: IconButton(
             icon: const Icon(Icons.arrow_back_rounded),
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Modular.to.pop(),
           ),
           title: const Text(
             'Cadastrar',
@@ -152,140 +88,139 @@ class _SignUpPageWidgetState extends State<SignUpPageWidget> {
           ),
           elevation: 2,
         ),
-        body: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Image.asset(
-                  'assets/images/icon.png',
-                  height: 200,
-                  fit: BoxFit.contain,
-                  errorBuilder: (context, error, stackTrace) =>
-                      const Icon(Icons.person, size: 100),
-                ),
-                const SizedBox(height: 32),
-                SizedBox(
-                  width: 316,
+        body: ListenableBuilder(
+            listenable: controller,
+            builder: (context, child) {
+              return Center(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
                   child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const SizedBox(height: 8),
-                      const Text(
-                        'Eu sou: ',
-                        style: TextStyle(
-                            fontSize: 16, fontWeight: FontWeight.w600),
+                      Image.asset(
+                        'assets/images/icon.png',
+                        height: 200,
+                        fit: BoxFit.contain,
+                        errorBuilder: (context, error, stackTrace) =>
+                            const Icon(Icons.person, size: 100),
                       ),
-                      const SizedBox(height: 8),
-                      RadioGroup<UserType>(
-                        groupValue: userType,
-                        onChanged: (value) {
-                          setState(() {
-                            userType = value!;
-                          });
-                        },
-                        child: Row(
-                          children: const [
-                            Expanded(
-                              child: RadioListTile<UserType>(
-                                title: Text('Paciente'),
-                                value: UserType.paciente,
-                              ),
+                      const SizedBox(height: 32),
+                      SizedBox(
+                        width: 316,
+                        child: Column(
+                          children: [
+                            const SizedBox(height: 8),
+                            const Text(
+                              'Eu sou: ',
+                              style: TextStyle(
+                                  fontSize: 16, fontWeight: FontWeight.w600),
                             ),
-                            Expanded(
-                              child: RadioListTile<UserType>(
-                                title: Text('Médico'),
-                                value: UserType.medico,
+                            const SizedBox(height: 8),
+                            RadioGroup<UserType>(
+                              groupValue: controller.userType,
+                              onChanged: controller.setUserType,
+                              child: Row(
+                                children: const [
+                                  Expanded(
+                                    child: RadioListTile<UserType>(
+                                      title: Text('Paciente'),
+                                      value: UserType.paciente,
+                                    ),
+                                  ),
+                                  Expanded(
+                                    child: RadioListTile<UserType>(
+                                      title: Text('Médico'),
+                                      value: UserType.medico,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                           ],
                         ),
                       ),
+                      _buildInput(
+                        controller: _nomeController,
+                        label: 'Nome',
+                        hint: 'Digite seu nome',
+                        icon: Icons.person_outline,
+                      ),
+                      const SizedBox(height: 16),
+                      _buildInput(
+                        controller: _emailController,
+                        label: 'E-mail',
+                        hint: 'Digite seu e-mail',
+                        icon: Icons.mail,
+                        isEmail: true,
+                      ),
+                      const SizedBox(height: 16),
+                      _buildInput(
+                        controller: _senhaController,
+                        label: 'Senha',
+                        hint: 'Digite sua senha',
+                        icon: Icons.lock_outline,
+                        isPassword: true,
+                      ),
+                      const SizedBox(height: 16),
+                      _buildInput(
+                        controller: _senhaConfirmarController,
+                        label: 'Confirmar senha',
+                        hint: 'Digite sua senha novamente',
+                        icon: Icons.lock_outline,
+                        isPassword: true,
+                      ),
+                      const SizedBox(height: 16),
+                      if (controller.userType == UserType.medico)
+                        _buildInput(
+                          controller: _crmController,
+                          label: 'CRM',
+                          hint: 'Digite seu CRM',
+                          icon: Icons.badge,
+                        ),
+                      if (controller.userType == UserType.paciente)
+                        _buildInput(
+                          controller: _dataDisplayController,
+                          label: 'Data de Diagnóstico',
+                          hint: 'Toque para selecionar',
+                          icon: Icons.calendar_today,
+                          readOnly: true,
+                          onTap: _abrirCalendario,
+                        ),
+                      const SizedBox(height: 16),
+                      ElevatedButton(
+                        onPressed: controller.isLoading
+                            ? null
+                            : () {
+                                // dispara o cadastro no Controller
+                                controller.cadastrar(
+                                  nome: _nomeController.text,
+                                  email: _emailController.text,
+                                  senha: _senhaController.text,
+                                  confirmarSenha:
+                                      _senhaConfirmarController.text,
+                                  crm: _crmController.text,
+                                );
+                              },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor:
+                              Theme.of(context).colorScheme.primary,
+                          foregroundColor:
+                              Theme.of(context).colorScheme.onPrimary,
+                          minimumSize: const Size(316, 60),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12)),
+                        ),
+                        child: controller.isLoading
+                            ? const CircularProgressIndicator()
+                            : const Text('Cadastrar',
+                                style: TextStyle(
+                                    fontSize: 20, fontWeight: FontWeight.bold)),
+                      ),
                     ],
                   ),
                 ),
-                _buildInput(
-                  controller: _nomeController,
-                  label: 'Nome',
-                  hint: 'Digite seu nome',
-                  icon: Icons.person_outline,
-                ),
-                const SizedBox(height: 16),
-                _buildInput(
-                  controller: _emailController,
-                  label: 'E-mail',
-                  hint: 'Digite seu e-mail',
-                  icon: Icons.mail,
-                  isEmail: true,
-                ),
-                const SizedBox(height: 16),
-                _buildInput(
-                  controller: _senhaController,
-                  label: 'Senha',
-                  hint: 'Digite sua senha',
-                  icon: Icons.lock_outline,
-                  isPassword: true,
-                ),
-                const SizedBox(height: 16),
-                _buildInput(
-                  controller: _senhaConfirmarController,
-                  label: 'Confirmar senha',
-                  hint: 'Digite sua senha novamente',
-                  icon: Icons.lock_outline,
-                  isPassword: true,
-                ),
-                const SizedBox(height: 16),
-                if (userType == UserType.medico)
-                  _buildInput(
-                    controller: _crmController,
-                    label: 'CRM',
-                    hint: 'Digite seu CRM',
-                    icon: Icons.badge,
-                  ),
-                if (userType == UserType.paciente)
-                  _buildInput(
-                    controller: _dataDiagnosticoController,
-                    label: 'Data de Diagnóstico',
-                    hint: 'Toque para selecionar',
-                    icon: Icons.calendar_today,
-                    readOnly: true,
-                    onTap: _abrirCalendario,
-                    isDate: true,
-                  ),
-                const SizedBox(height: 16),
-                ElevatedButton(
-                  onPressed: () async {
-                    if (_senhaController.text ==
-                        _senhaConfirmarController.text) {
-                      _fazerCadastro();
-                    } else {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('As senhas não conferem.'),
-                          backgroundColor: Colors.red,
-                        ),
-                      );
-                    }
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Theme.of(context)
-                        .colorScheme
-                        .primary, // Cor do Contexto
-                    foregroundColor: Theme.of(context).colorScheme.onPrimary,
-                    minimumSize: const Size(316, 60),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: const Text(
-                    'Cadastrar',
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
+              );
+            }),
       ),
     );
   }
@@ -297,7 +232,6 @@ class _SignUpPageWidgetState extends State<SignUpPageWidget> {
     required IconData icon,
     bool isPassword = false,
     bool isEmail = false,
-    bool isDate = false,
     VoidCallback? onTap,
     bool readOnly = false,
   }) {

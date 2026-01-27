@@ -1,6 +1,5 @@
-import 'package:aspa/src/pages/signup_page.dart';
 import 'package:flutter/material.dart';
-import 'package:aspa/src/pages/login_page.dart';
+import 'package:flutter_modular/flutter_modular.dart';
 
 class LandingPage extends StatefulWidget {
   const LandingPage({super.key});
@@ -103,12 +102,7 @@ class _LandingPageState extends State<LandingPage> {
                         height: 58,
                         child: ElevatedButton(
                           onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (context) =>
-                                      const LoginPageWidget()),
-                            );
+                            Modular.to.pushNamed('/login');
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: colorScheme.primary,
@@ -140,11 +134,7 @@ class _LandingPageState extends State<LandingPage> {
                       height: 58,
                       child: ElevatedButton(
                         onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) => const SignUpPageWidget()),
-                          );
+                          Modular.to.pushNamed('/signup');
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: colorScheme.tertiary,

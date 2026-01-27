@@ -27,11 +27,11 @@ class ApiService {
         return jsonDecode(response.body);
       } else {
         // Se deu ruim: (401)
-        print("Erro no login: ${response.body}");
+        // print("Erro no login: ${response.body}");
         return null;
       }
     } catch (e) {
-      print("Erro de conexão: $e");
+      // print("Erro de conexão: $e");
       return null;
     }
   }
@@ -55,11 +55,11 @@ class ApiService {
       if (response.statusCode == 200) {
         return jsonDecode(response.body);
       } else {
-        print("Erro de API: ${response.body}");
+        // print("Erro de API: ${response.body}");
         return null;
       }
     } catch (e) {
-      print("Erro de conexão: $e");
+      // print("Erro de conexão: $e");
       return null;
     }
   }
@@ -83,11 +83,11 @@ class ApiService {
       if (response.statusCode == 200) {
         return jsonDecode(response.body);
       } else {
-        print("Erro de API: ${response.body}");
+        // print("Erro de API: ${response.body}");
         return null; // Deu ruim
       }
     } catch (e) {
-      print("Erro de conexão: $e");
+      // print("Erro de conexão: $e");
       return null; // Server desligado ou IP errado
     }
   }
@@ -104,7 +104,7 @@ class ApiService {
         return null;
       }
     } catch (e) {
-      print("Erro ao buscar médico: $e");
+      // print("Erro ao buscar médico: $e");
       return null;
     }
   }
@@ -121,7 +121,7 @@ class ApiService {
         return null;
       }
     } catch (e) {
-      print("Erro ao buscar paciente: $e");
+      // print("Erro ao buscar paciente: $e");
       return null;
     }
   }

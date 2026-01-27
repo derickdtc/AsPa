@@ -1,9 +1,6 @@
-import 'package:aspa/src/pages/jardineiro_game.dart';
-import 'package:aspa/src/pages/landing_page.dart';
-import 'package:aspa/src/pages/reminders_page.dart';
 import 'package:flutter/material.dart';
-import 'package:aspa/src/pages/profile_page.dart';
-import '/api_service.dart';
+import 'package:flutter_modular/flutter_modular.dart';
+import '../controllers/home_controller.dart';
 
 class Homepage extends StatefulWidget {
   final int userId;
@@ -15,151 +12,129 @@ class Homepage extends StatefulWidget {
 }
 
 class _HomepageState extends State<Homepage> {
-  final ApiService _api = ApiService();
-  int _streak = 0;
-  bool _isLoading = true;
+  final HomeController controller = Modular.get<HomeController>();
 
   @override
   void initState() {
     super.initState();
-    _carregarDadosPaciente();
-  }
-
-  // busca dados do banco (por enquanto so o streak, posteriormente buscar todas as infos.)
-  void _carregarDadosPaciente() async {
-    final dados = await _api.getPaciente(widget.userId);
-    if (dados != null) {
-      setState(() {
-        _streak = dados['sequencia_dias'];
-        _isLoading = false;
-      });
-    }
+    controller.carregarDadosPaciente(widget.userId);
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    // final textTheme = theme.textTheme;
 
-    return Scaffold(
-      backgroundColor: colorScheme.surface,
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 10),
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.max,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.only(top: 20),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    return ListenableBuilder(
+        listenable: controller,
+        builder: (context, child) {
+          return Scaffold(
+            backgroundColor: colorScheme.surface,
+            body: SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 10),
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.max,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      InkWell(
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) => const LandingPage()),
-                          );
-                        },
-                        borderRadius: BorderRadius.circular(15),
-                        child: Container(
-                          width: 48,
-                          height: 48,
-                          decoration: BoxDecoration(
-                            color: colorScheme.secondary,
-                            borderRadius: BorderRadius.circular(15),
-                          ),
-                          child: Icon(
-                            Icons.logout_outlined,
-                            color: colorScheme.onSecondary,
-                            size: 28, // Ajuste visual
-                          ),
+                      Padding(
+                        padding: const EdgeInsets.only(top: 20),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            InkWell(
+                              onTap: () {
+                                Modular.to.navigate('/landing');
+                              },
+                              borderRadius: BorderRadius.circular(15),
+                              child: Container(
+                                width: 48,
+                                height: 48,
+                                decoration: BoxDecoration(
+                                  color: colorScheme.secondary,
+                                  borderRadius: BorderRadius.circular(15),
+                                ),
+                                child: Icon(
+                                  Icons.logout_outlined,
+                                  color: colorScheme.onSecondary,
+                                  size: 28, // Ajuste visual
+                                ),
+                              ),
+                            ),
+                            InkWell(
+                              onTap: () {
+                                Modular.to.pushNamed('/profile', arguments: {
+                                  'id': widget.userId,
+                                  'isMedico': false
+                                });
+                              },
+                              borderRadius: BorderRadius.circular(15),
+                              child: Container(
+                                width: 48,
+                                height: 48,
+                                decoration: BoxDecoration(
+                                  color: colorScheme.secondary,
+                                  borderRadius: BorderRadius.circular(15),
+                                ),
+                                child: Icon(
+                                  Icons.person,
+                                  color: colorScheme.onSecondary,
+                                  size: 28,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                      InkWell(
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) =>
-                                    ProfilePage(userId: widget.userId)),
-                          );
-                        },
-                        borderRadius: BorderRadius.circular(15),
-                        child: Container(
-                          width: 48,
-                          height: 48,
-                          decoration: BoxDecoration(
-                            color: colorScheme.secondary,
-                            borderRadius: BorderRadius.circular(15),
-                          ),
-                          child: Icon(
-                            Icons.person,
-                            color: colorScheme.onSecondary,
-                            size: 28,
-                          ),
+                      Padding(
+                        padding: const EdgeInsets.only(top: 20),
+                        child: controller.isLoading
+                            ? const Center(child: CircularProgressIndicator())
+                            : _buildSummaryCard(
+                                context,
+                                color: colorScheme.primary,
+                                icon: Icons.celebration,
+                                text:
+                                    'Você completou ${controller.streak} dias seguidos!',
+                                height: 150,
+                              ),
+                      ),
+                      _buildSectionHeader(context, 'Exercícios'),
+                      _buildSubText(
+                          context, 'Você tem 0 exercícios para hoje!'),
+                      Padding(
+                        padding: const EdgeInsets.only(top: 20),
+                        child: _buildActionCard(
+                          context,
+                          label: 'Ver Exercícios',
+                          icon: Icons.directions_run,
+                          onTap: () {
+                            Modular.to.pushNamed('/game_jardineiro');
+                          },
                         ),
                       ),
+                      _buildSectionHeader(context, 'Lembretes'),
+                      _buildSubText(context, 'Você tem 0 lembretes para hoje!'),
+                      Padding(
+                        padding: const EdgeInsets.only(top: 20),
+                        child: _buildActionCard(
+                          context,
+                          label: 'Ver Lembretes',
+                          icon: Icons.alarm_on_rounded,
+                          onTap: () {
+                            Modular.to.pushNamed('/reminders');
+                          },
+                        ),
+                      ),
+                      const SizedBox(height: 40),
                     ],
                   ),
                 ),
-                Padding(
-                  padding: const EdgeInsets.only(top: 20),
-                  child: _isLoading
-                      ? CircularProgressIndicator()
-                      : _buildSummaryCard(
-                          context,
-                          color: colorScheme.primary,
-                          icon: Icons.celebration,
-                          text: 'Você completou $_streak dias seguidos!',
-                          height: 150,
-                        ),
-                ),
-                _buildSectionHeader(context, 'Exercícios'),
-                _buildSubText(context, 'Você tem 0 exercícios para hoje!'),
-                Padding(
-                  padding: const EdgeInsets.only(top: 20),
-                  child: _buildActionCard(
-                    context,
-                    label: 'Ver Exercícios',
-                    icon: Icons.directions_run,
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => const JardineiroGame()),
-                      );
-                    },
-                  ),
-                ),
-                _buildSectionHeader(context, 'Lembretes'),
-                _buildSubText(context, 'Você tem 0 lembretes para hoje!'),
-                Padding(
-                  padding: const EdgeInsets.only(top: 20),
-                  child: _buildActionCard(
-                    context,
-                    label: 'Ver Lembretes',
-                    icon: Icons.alarm_on_rounded,
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => const RemindersPage()),
-                      );
-                    },
-                  ),
-                ),
-                const SizedBox(height: 40),
-              ],
+              ),
             ),
-          ),
-        ),
-      ),
-    );
+          );
+        });
   }
 
   Widget _buildSectionHeader(BuildContext context, String title) {
