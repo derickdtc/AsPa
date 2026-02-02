@@ -1,6 +1,6 @@
 from fastapi import FastAPI, HTTPException, Depends
 from pydantic import BaseModel
-from sqlalchemy import create_engine, Column, Integer, String, Date, ForeignKey
+from sqlalchemy import create_engine, Column, Integer, String, Date, ForeignKey, DateTime
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session, relationship
 from passlib.context import CryptContext
@@ -97,6 +97,19 @@ class LoginRequest(BaseModel):
     email: str
     senha: str
     
+class PacienteUpdate(BaseModel):
+    nome: Optional[str] = None
+    email: Optional[str] = None
+    senha: Optional[str] = None
+    data_diagnostico: Optional[date] = None
+    sequencia_dias: Optional[int] = None
+    
+class MedicoUpdate(BaseModel):
+    nome: Optional[str] = None
+    email: Optional[str] = None
+    senha: Optional[str] = None
+    registro_profissional: Optional[int] = None
+    
 # as rotas que o Flutter vai chamar
 app = FastAPI(title="API Parkinson App")
 origins = ["*"] 
@@ -146,6 +159,82 @@ def criar_paciente(paciente: PacienteCreate, db: Session = Depends(get_db)):
         sequencia_dias=novo_paciente.sequencia_dias
     )
 
+# route p/ ler dados do paciente
+@app.get("/pacientes/{paciente_id}", response_model=PacienteResponse)
+def ler_paciente(paciente_id: int, db: Session = Depends(get_db)):
+    paciente = db.query(PacienteDB).join(UsuarioDB).filter(PacienteDB.id_paciente == paciente_id).first()
+    
+    if not paciente:
+        raise HTTPException(status_code=404, detail="Paciente não encontrado")
+        
+    return PacienteResponse(
+        id_usuario=paciente.id_paciente,
+        nome=paciente.usuario.nome,
+        email=paciente.usuario.email,
+        sequencia_dias=paciente.sequencia_dias
+    )
+    
+@app.put("/pacientes/{paciente_id}", response_model=PacienteResponse)
+def update_paciente(paciente_id: int, dados: PacienteUpdate, db: Session = Depends(get_db)):
+    paciente = db.query(PacienteDB).filter(PacienteDB.id_paciente == paciente_id).first()
+    
+    if not paciente:
+        raise HTTPException(status_code=404, detail="Paciente não encontrado")
+    
+    usuario = paciente.usuario
+    
+    if dados.nome is not None:
+        usuario.nome = dados.nome
+
+    if dados.email is not None:
+        email_existente = db.query(UsuarioDB).filter(
+            UsuarioDB.email == dados.email,
+            UsuarioDB.id_usuario != usuario.id_usuario
+        ).first()
+
+        if email_existente:
+            raise HTTPException(status_code=400, detail="Email já cadastrado")
+
+        usuario.email = dados.email
+
+    if dados.senha is not None:
+        usuario.senha = pwd_context.hash(dados.senha)
+
+    if dados.data_diagnostico is not None:
+        paciente.data_diagnostico = dados.data_diagnostico
+
+    if dados.sequencia_dias is not None:
+        paciente.sequencia_dias = dados.sequencia_dias
+
+    db.commit()
+    db.refresh(paciente)
+
+    return PacienteResponse(
+        id_usuario=usuario.id_usuario,
+        nome=usuario.nome,
+        email=usuario.email,
+        sequencia_dias=paciente.sequencia_dias
+    )
+    
+@app.delete("/pacientes/{paciente_id}", response_model=PacienteResponse)
+def delete_paciente(paciente_id: int, db: Session = Depends(get_db)):
+    paciente = db.query(PacienteDB).filter(PacienteDB.id_paciente == paciente_id).first()
+    
+    if not paciente:
+        raise HTTPException(status_code=404, detail="Paciente não encontrado")
+    
+    response = PacienteResponse(
+        id_usuario=paciente.id_paciente,
+        nome=paciente.usuario.nome,
+        email=paciente.usuario.email,
+        sequencia_dias=paciente.sequencia_dias
+    )
+    
+    db.query(PacienteDB).filter(PacienteDB.id_paciente == paciente_id).delete()
+    db.commit()
+    
+    return response
+    
 # route medicos
 @app.post("/medicos/")
 def criar_medico(medico: MedicoCreate, db: Session = Depends(get_db)):
@@ -171,21 +260,6 @@ def criar_medico(medico: MedicoCreate, db: Session = Depends(get_db)):
 
     return {"msg": "Médico criado", "id_usuario": novo_usuario.id_usuario}
 
-# route p/ ler dados do paciente
-@app.get("/pacientes/{paciente_id}", response_model=PacienteResponse)
-def ler_paciente(paciente_id: int, db: Session = Depends(get_db)):
-    paciente = db.query(PacienteDB).join(UsuarioDB).filter(PacienteDB.id_paciente == paciente_id).first()
-    
-    if not paciente:
-        raise HTTPException(status_code=404, detail="Paciente não encontrado")
-        
-    return PacienteResponse(
-        id_usuario=paciente.id_paciente, 
-        nome=paciente.usuario.nome,
-        email=paciente.usuario.email,
-        sequencia_dias=paciente.sequencia_dias
-    )
-
 # route get medico
 @app.get("/medicos/{medico_id}")
 def ler_medico(medico_id: int, db: Session = Depends(get_db)):
@@ -201,6 +275,52 @@ def ler_medico(medico_id: int, db: Session = Depends(get_db)):
         "email": medico.usuario.email,
         "crm": medico.registro_profissional
     }
+    
+@app.put("/medicos/{medico_id}")
+def update_medico(medico_id: int, dados: MedicoUpdate, db: Session = Depends(get_db)):
+    medico = db.query(ProfissionalSaudeDB).filter(ProfissionalSaudeDB.id_profissional_saude == medico_id).first()
+    
+    if not medico:
+        raise HTTPException(status_code=404, detail="Paciente não encontrado")
+    
+    usuario = medico.usuario
+    
+    if dados.nome is not None:
+        usuario.nome = dados.nome
+
+    if dados.email is not None:
+        email_existente = db.query(UsuarioDB).filter(
+            UsuarioDB.email == dados.email,
+            UsuarioDB.id_usuario != usuario.id_usuario
+        ).first()
+
+        if email_existente:
+            raise HTTPException(status_code=400, detail="Email já cadastrado")
+
+        usuario.email = dados.email
+
+    if dados.senha is not None:
+        usuario.senha = pwd_context.hash(dados.senha)
+
+    if dados.registro_profissional is not None:
+        medico.registro_profissional = dados.registro_profissional
+
+    db.commit()
+    db.refresh(medico)
+
+    return medico
+
+@app.delete("/medicos/{medico_id}")
+def delete_medico(medico_id: int, db: Session = Depends(get_db)):
+    medico = db.query(ProfissionalSaudeDB).filter(ProfissionalSaudeDB.id_profissional_saude == medico_id).first()
+    
+    if not medico:
+        raise HTTPException(status_code=404, detail="Medico não encontrado")
+    
+    db.query(ProfissionalSaudeDB).filter(ProfissionalSaudeDB.id_profissional_saude == medico_id).delete()
+    db.commit()
+    
+    return {"msg": "Médico deletado", "id_usuario": medico.id_profissional_saude}
     
 @app.post("/login")
 def login(dados: LoginRequest, db: Session = Depends(get_db)):

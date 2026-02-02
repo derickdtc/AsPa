@@ -64,6 +64,76 @@ class ApiService {
     }
   }
 
+  Future<Map<String, dynamic>?> getPaciente(int id) async {
+    final url = Uri.parse('$baseUrl/pacientes/$id');
+
+    try {
+      final response = await http.get(url);
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        return null;
+      }
+    } catch (e) {
+      // print("Erro ao buscar paciente: $e");
+      return null;
+    }
+  }
+
+  Future<Map<String, dynamic>?> updatePaciente(
+    int id, {String? nome, String? email, String? senha, String? dataDiagnostico, int? sequenciaDias}) async {
+    final url = Uri.parse('$baseUrl/pacientes/$id');
+
+    final Map<String, dynamic> corpo = {};
+
+    if (nome != null) corpo["nome"] = nome;
+    if (email != null) corpo["email"] = email;
+    if (senha != null) corpo["senha"] = senha;
+    if (dataDiagnostico != null) {
+      corpo["data_diagnostico"] = dataDiagnostico;
+    }
+    if (sequenciaDias != null) {
+      corpo["sequencia_dias"] = sequenciaDias;
+    }
+
+
+    try {
+      final response = await http.put(
+        url,
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode(corpo),
+      );
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        // print("Erro ao atualizar paciente: ${response.body}");
+        return null;
+      }
+    } catch (e) {
+      // print("Erro de conexão: $e");
+      return null;
+    }
+  }
+
+  Future<bool> deletePaciente(int id) async {
+    final url = Uri.parse('$baseUrl/pacientes/$id');
+
+    try {
+      final response = await http.delete(url);
+
+      if(response.statusCode == 200) {
+        return true;
+      } else {
+        return false;
+      }
+    } catch (e) {
+      // print("Erro de conexão: $e");
+      return false;
+    }
+  }
+
   Future<Map<String, dynamic>?> cadastrarMedico(
       String nome, String email, String senha, String crm) async {
     final url = Uri.parse('$baseUrl/medicos/');
@@ -109,20 +179,52 @@ class ApiService {
     }
   }
 
-  Future<Map<String, dynamic>?> getPaciente(int id) async {
-    final url = Uri.parse('$baseUrl/pacientes/$id');
+  Future<Map<String, dynamic>?> updateMedico(
+    int id, {String? nome, String? email, String? senha, String? crm}) async {
+    final url = Uri.parse('$baseUrl/medicos/$id');
+
+    final Map<String, dynamic> corpo = {};
+
+    if (nome != null) corpo["nome"] = nome;
+    if (email != null) corpo["email"] = email;
+    if (senha != null) corpo["senha"] = senha;
+    if (crm != null) {
+      corpo["crm"] = crm;
+    }
 
     try {
-      final response = await http.get(url);
+      final response = await http.put(
+        url,
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode(corpo),
+      );
 
       if (response.statusCode == 200) {
         return jsonDecode(response.body);
       } else {
+        // print("Erro ao atualizar paciente: ${response.body}");
         return null;
       }
     } catch (e) {
-      // print("Erro ao buscar paciente: $e");
+      // print("Erro de conexão: $e");
       return null;
     }
+  }
+
+  Future<bool> deleteMedico(int id) async {
+    final url = Uri.parse('$baseUrl/medicos/$id');
+
+    try {
+      final response = await http.delete(url);
+
+      if(response.statusCode == 200){
+        return true;
+      } else {
+        return false;
+      }
+    } catch (e) {
+      return false;
+    }
+
   }
 }
