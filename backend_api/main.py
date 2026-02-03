@@ -1,11 +1,11 @@
 from fastapi import FastAPI, HTTPException, Depends
 from pydantic import BaseModel
-from sqlalchemy import create_engine, Column, Integer, String, Date, ForeignKey, DateTime
+from sqlalchemy import create_engine, Column, Integer, String, Date, ForeignKey, DateTime, DOUBLE_PRECISION
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session, relationship
 from passlib.context import CryptContext
 from typing import Optional
-from datetime import date
+from datetime import date, datetime
 import os
 from dotenv import load_dotenv
 from passlib.context import CryptContext
@@ -67,6 +67,20 @@ class PacienteDB(Base):
     sequencia_dias = Column(Integer, default=0)
     
     usuario = relationship("UsuarioDB", back_populates="paciente")
+    sessoes = relationship("SessaoDB", back_populates="paciente", cascade="all, delete-orphan")
+    
+class SessaoDB(Base):
+    __tablename__ = "sessao"
+    
+    id_sessao = Column(Integer, primary_key=True, index=True)
+    data_hora = Column(DateTime)
+    duracao_realizada = Column(DOUBLE_PRECISION)
+    dificuldade_info = Column(String(20))
+    comentario_paciente = Column(String(150))
+    
+    id_paciente = Column("id_paciente_fk",Integer, ForeignKey("paciente.id_paciente"), nullable=False)
+    
+    paciente = relationship("PacienteDB", back_populates="sessoes")
 
 # SCHEMAS
 
@@ -76,6 +90,13 @@ class PacienteCreate(BaseModel):
     email: str
     senha: str
     data_diagnostico: Optional[date] = None
+    
+class SessionCreate(BaseModel):
+    id_paciente: int
+    data_hora: datetime
+    duracao_realizada: float
+    dificuldade_info: str
+    comentario_paciente: Optional[str] = None
 
 # enviando para o Flutter como resposta
 class PacienteResponse(BaseModel):
@@ -109,6 +130,12 @@ class MedicoUpdate(BaseModel):
     email: Optional[str] = None
     senha: Optional[str] = None
     registro_profissional: Optional[int] = None
+    
+class SessaoUpdate(BaseModel):
+    data_hora: Optional[datetime] = None
+    duracao_realizada: Optional[float] = None
+    dificuldade_info: Optional[str] = None
+    comentario_paciente: Optional[str] = None
     
 # as rotas que o Flutter vai chamar
 app = FastAPI(title="API Parkinson App")
@@ -158,7 +185,7 @@ def criar_paciente(paciente: PacienteCreate, db: Session = Depends(get_db)):
         email=novo_usuario.email,
         sequencia_dias=novo_paciente.sequencia_dias
     )
-
+ 
 # route p/ ler dados do paciente
 @app.get("/pacientes/{paciente_id}", response_model=PacienteResponse)
 def ler_paciente(paciente_id: int, db: Session = Depends(get_db)):
@@ -321,6 +348,69 @@ def delete_medico(medico_id: int, db: Session = Depends(get_db)):
     db.commit()
     
     return {"msg": "Médico deletado", "id_usuario": medico.id_profissional_saude}
+
+@app.post("/sessoes/")
+def criar_sessao(sessao: SessionCreate, db: Session = Depends(get_db)):
+    paciente = db.query(PacienteDB).filter(
+        PacienteDB.id_paciente == sessao.id_paciente
+    ).first()
+
+    if not paciente:
+        raise HTTPException(status_code=404, detail="Paciente não encontrado")
+    
+    nova_sessao = SessaoDB(data_hora = sessao.data_hora, duracao_realizada = sessao.duracao_realizada, dificuldade_info = sessao.dificuldade_info
+                            , comentario_paciente = sessao.comentario_paciente, paciente=paciente)
+    # criando usuário
+    db.add(nova_sessao)
+    db.commit()
+    db.refresh(nova_sessao) 
+    
+    return {"msg": "sessao criado", "id_sessao": nova_sessao.id_sessao, "id_paciente": paciente.id_paciente}
+
+@app.get("/sessoes/{sessao_id}")
+def ler_sessao(sessao_id: int, db: Session = Depends(get_db)):
+    sessao = db.query(SessaoDB).filter(SessaoDB.id_sessao == sessao_id).first()
+    
+    if not sessao:
+        raise HTTPException(status_code=404, detail="Sessao não encontrado")
+        
+    return sessao
+
+@app.put("/sessoes/{sessao_id}")
+def update_paciente(sessao_id: int, dados: SessaoUpdate, db: Session = Depends(get_db)):
+    sessao = db.query(SessaoDB).filter(SessaoDB.id_sessao == sessao_id).first()
+    
+    if not sessao:
+        raise HTTPException(status_code=404, detail="Sessao não encontrado")
+    
+    if dados.data_hora is not None:
+        sessao.data_hora = dados.data_hora
+
+    if dados.duracao_realizada is not None:
+        sessao.duracao_realizada = dados.duracao_realizada
+
+    if dados.dificuldade_info is not None:
+        sessao.dificuldade_info = dados.dificuldade_info
+
+    if dados.comentario_paciente is not None:
+        sessao.comentario_paciente = dados.comentario_paciente
+
+    db.commit()
+    db.refresh(sessao)
+
+    return {"msg": "sessao alterada", "id_sessao": sessao.id_sessao}
+
+@app.delete("/sessoes/{sessao_id}")
+def delete_sessao(sessao_id: int, db: Session = Depends(get_db)):
+    sessao = db.query(SessaoDB).filter(SessaoDB.id_sessao == sessao_id).first()
+    
+    if not sessao:
+        raise HTTPException(status_code=404, detail="Sessao não encontrado")
+    
+    db.query(SessaoDB).filter(SessaoDB.id_sessao == sessao_id).delete()
+    db.commit()
+    
+    return {"msg": "sessao deletada", "id_sessao": sessao.id_sessao}
     
 @app.post("/login")
 def login(dados: LoginRequest, db: Session = Depends(get_db)):

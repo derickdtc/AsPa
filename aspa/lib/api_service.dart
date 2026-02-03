@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:ffi';
 import 'package:http/http.dart' as http;
 
 class ApiService {
@@ -213,6 +214,98 @@ class ApiService {
 
   Future<bool> deleteMedico(int id) async {
     final url = Uri.parse('$baseUrl/medicos/$id');
+
+    try {
+      final response = await http.delete(url);
+
+      if(response.statusCode == 200){
+        return true;
+      } else {
+        return false;
+      }
+    } catch (e) {
+      return false;
+    }
+
+  }
+
+  Future<Map<String, dynamic>?> cadastrarSessao(
+      String dataHora, String dificuldadeInfo) async {
+    final url = Uri.parse('$baseUrl/sessoes/');
+
+    try {
+      final response = await http.post(
+        url,
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({
+          "data_hora": dataHora,
+          "dificuldade_info": dificuldadeInfo
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        // print("Erro de API: ${response.body}");
+        return null;
+      }
+    } catch (e) {
+      // print("Erro de conexão: $e");
+      return null;
+    }
+  }
+
+  Future<Map<String, dynamic>?> getSessao(int id) async {
+    final url = Uri.parse('$baseUrl/sessoes/$id');
+
+    try {
+      final response = await http.get(url);
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        return null;
+      }
+    } catch (e) {
+      // print("Erro ao buscar paciente: $e");
+      return null;
+    }
+  }
+
+  Future<Map<String, dynamic>?> updateSessao(
+    int id, {String? dataHora, Float? duracaoRealizada, String? dificuldadeInfo, String? comentarioPaciente}) async {
+    final url = Uri.parse('$baseUrl/sessoes/$id');
+
+    final Map<String, dynamic> corpo = {};
+
+    if (dataHora != null) corpo["data_hora"] = dataHora;
+    if (duracaoRealizada != null) corpo["duracao_realizada"] = duracaoRealizada;
+    if (dificuldadeInfo != null) corpo["dificuldade_info"] = dificuldadeInfo;
+    if (comentarioPaciente != null) {
+      corpo["comentario_paciente"] = comentarioPaciente;
+    }
+
+    try {
+      final response = await http.put(
+        url,
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode(corpo),
+      );
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        // print("Erro ao atualizar paciente: ${response.body}");
+        return null;
+      }
+    } catch (e) {
+      // print("Erro de conexão: $e");
+      return null;
+    }
+  }
+
+  Future<bool> deleteSessao(int id) async {
+    final url = Uri.parse('$baseUrl/sessoes/$id');
 
     try {
       final response = await http.delete(url);
