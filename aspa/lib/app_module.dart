@@ -49,6 +49,6 @@ class AppModule extends Module {
     r.child('/edit_profile', child: (context) => const EditProfilePage());
 
     r.child('/reminders', child: (context) => const RemindersPage());
-    r.child('/game_jardineiro', child: (context) => const JardineiroGame());
+    r.child('/game_jardineiro', child: (context) => const JardineiroGamePage());
   }
 }
