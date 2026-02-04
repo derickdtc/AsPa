@@ -44,7 +44,8 @@ class UsuarioDB(Base):
     nome = Column(String(100))
     email = Column(String(150), unique=True, index=True)
     senha = Column(String(255))
-    
+    data_nascimento = Column(Date, nullable=True)
+    foto = Column(String, nullable=True)
     # um usuário pode ter um perfil de paciente
     paciente = relationship("PacienteDB", back_populates="usuario", uselist=False)
     profissional_saude = relationship("ProfissionalSaudeDB", back_populates="usuario", uselist=False)
@@ -90,6 +91,8 @@ class PacienteCreate(BaseModel):
     email: str
     senha: str
     data_diagnostico: Optional[date] = None
+    data_nascimento: Optional[date] = None
+    foto: Optional[str] = None
     
 class SessionCreate(BaseModel):
     id_paciente: int
@@ -104,15 +107,17 @@ class PacienteResponse(BaseModel):
     nome: str
     email: str
     sequencia_dias: int
-    
+    foto: Optional[str] = None
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class MedicoCreate(BaseModel):
     nome: str
     email: str
     senha: str
     registro_profissional: str 
+    data_nascimento: Optional[date] = None
+    foto: Optional[str] = None
 
 class LoginRequest(BaseModel):
     email: str
@@ -167,7 +172,13 @@ def criar_paciente(paciente: PacienteCreate, db: Session = Depends(get_db)):
 
     # criando usuário
     hash_senha = pwd_context.hash(paciente.senha) 
-    novo_usuario = UsuarioDB(nome=paciente.nome, email=paciente.email, senha=hash_senha)
+    novo_usuario = UsuarioDB(
+        nome=paciente.nome, 
+        email=paciente.email, 
+        senha=hash_senha,
+        data_nascimento=paciente.data_nascimento, 
+        foto=paciente.foto                     
+    )
     db.add(novo_usuario)
     db.commit()
     db.refresh(novo_usuario) 

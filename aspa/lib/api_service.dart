@@ -37,19 +37,25 @@ class ApiService {
   }
 
   Future<Map<String, dynamic>?> cadastrarPaciente(
-      String nome, String email, String senha, String dataDiagnostico) async {
+      String nome, String email, String senha, String dataDiagnostico,
+      {String? dataNascimento, String? foto}) async {
     final url = Uri.parse('$baseUrl/pacientes/');
+
+    final Map<String, dynamic> body = {
+      "nome": nome,
+      "email": email,
+      "senha": senha,
+      "data_diagnostico": dataDiagnostico,
+    };
+
+    if (dataNascimento != null) body["data_nascimento"] = dataNascimento;
+    if (foto != null) body["foto"] = foto;
 
     try {
       final response = await http.post(
         url,
         headers: {"Content-Type": "application/json"},
-        body: jsonEncode({
-          "nome": nome,
-          "email": email,
-          "senha": senha,
-          "data_diagnostico": dataDiagnostico
-        }),
+        body: jsonEncode(body),
       );
 
       if (response.statusCode == 200) {
@@ -230,20 +236,16 @@ class ApiService {
     }
   }
 
-  Future<Map<String, dynamic>?> cadastrarSessao(int idPaciente, String dataHora,
-      double duracao, String dificuldade) async {
+  Future<Map<String, dynamic>?> cadastrarSessao(
+      String dataHora, String dificuldadeInfo) async {
     final url = Uri.parse('$baseUrl/sessoes/');
 
     try {
       final response = await http.post(
         url,
         headers: {"Content-Type": "application/json"},
-        body: jsonEncode({
-          "id_paciente": idPaciente,
-          "data_hora": dataHora,
-          "duracao_realizada": duracao,
-          "dificuldade_info": dificuldade
-        }),
+        body: jsonEncode(
+            {"data_hora": dataHora, "dificuldade_info": dificuldadeInfo}),
       );
 
       if (response.statusCode == 200) {

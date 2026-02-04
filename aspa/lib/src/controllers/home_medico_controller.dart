@@ -1,26 +1,112 @@
 import 'package:flutter/material.dart';
 import '/api_service.dart';
+import '../models/home_medico_model.dart';
 
 class HomeMedicoController extends ChangeNotifier {
   final ApiService _api = ApiService();
 
-  bool isLoading = true;
-  String crm = '';
-  // Futuramente: List<Paciente> pacientes = [];
+  MedicoHomeState _state = MedicoHomeState();
+
+  // Getters
+  MedicoHomeState get state => _state;
+  bool get isLoading => _state.isLoading;
+  String? get errorMessage => _state.errorMessage;
+  MedicoModel? get medico => _state.medico;
+  List<PacienteListadoModel> get pacientes => _state.pacientes;
+  String get crm => _state.medico?.crm ?? 'Carregando...';
 
   Future<void> carregarDadosMedico(int userId) async {
-    isLoading = true;
-    notifyListeners(); // Avisa a view que começou a carregar
+    _updateState(isLoading: true);
 
-    final dados = await _api.getMedico(userId);
+    try {
+      final dados = await _api.getMedico(userId);
 
-    if (dados != null) {
-      crm = dados['crm'] ?? 'Não informado';
-    } else {
-      crm = 'Erro ao carregar';
+      if (dados != null) {
+        final medico = MedicoModel.fromJson(dados);
+        _updateState(
+          medico: medico,
+          pacientes: mockPacientes, // Substituir por API quando disponível
+          isLoading: false,
+        );
+      } else {
+        _updateState(
+          errorMessage: 'Erro ao carregar dados do médico',
+          isLoading: false,
+        );
+      }
+    } catch (e) {
+      _updateState(
+        errorMessage: 'Erro de conexão. Tente novamente.',
+        isLoading: false,
+      );
     }
+  }
 
-    isLoading = false;
-    notifyListeners(); // Avisa a view que terminou
+  Future<void> carregarPacientes(int medicoId) async {
+    try {
+      // TODO: Implementar API para buscar pacientes do médico
+      // final pacientesData = await _api.getPacientesDoMedico(medicoId);
+      // final pacientes = pacientesData.map((p) => PacienteListadoModel.fromJson(p)).toList();
+      // _updateState(pacientes: pacientes);
+
+      // Por enquanto, usando mock data
+      await Future.delayed(const Duration(milliseconds: 500));
+      _updateState(pacientes: mockPacientes);
+    } catch (e) {
+      _updateState(errorMessage: 'Erro ao carregar pacientes');
+    }
+  }
+
+  Future<void> adicionarPaciente(String nomePaciente) async {
+    // TODO: Implementar lógica para adicionar paciente
+    final novoPaciente = PacienteListadoModel(
+      id: pacientes.length + 1,
+      nome: nomePaciente,
+      ultimaConsulta: DateTime.now(),
+      temExerciciosPendentes: false,
+    );
+
+    _updateState(
+      pacientes: [...pacientes, novoPaciente],
+    );
+  }
+
+  void navegarParaPerfilPaciente(
+      PacienteListadoModel paciente, BuildContext context) {
+    // TODO: Implementar navegação para tela do paciente
+    // Modular.to.pushNamed('/paciente/${paciente.id}');
+  }
+
+  void _updateState({
+    MedicoModel? medico,
+    List<PacienteListadoModel>? pacientes,
+    bool? isLoading,
+    String? errorMessage,
+  }) {
+    _state = _state.copyWith(
+      medico: medico,
+      pacientes: pacientes,
+      isLoading: isLoading,
+      errorMessage: errorMessage,
+    );
+    notifyListeners();
+  }
+
+  void limparErro() {
+    if (_state.errorMessage != null) {
+      _updateState(errorMessage: null);
+    }
+  }
+
+  void atualizarNomeMedico(String novoNome) {
+    if (_state.medico != null) {
+      final medicoAtualizado = MedicoModel(
+        id: _state.medico!.id,
+        nome: novoNome,
+        crm: _state.medico!.crm,
+        email: _state.medico!.email,
+      );
+      _updateState(medico: medicoAtualizado);
+    }
   }
 }
