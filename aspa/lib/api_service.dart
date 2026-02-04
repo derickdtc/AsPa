@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:ffi';
 import 'package:http/http.dart' as http;
 
 class ApiService {
@@ -82,8 +81,12 @@ class ApiService {
     }
   }
 
-  Future<Map<String, dynamic>?> updatePaciente(
-    int id, {String? nome, String? email, String? senha, String? dataDiagnostico, int? sequenciaDias}) async {
+  Future<Map<String, dynamic>?> updatePaciente(int id,
+      {String? nome,
+      String? email,
+      String? senha,
+      String? dataDiagnostico,
+      int? sequenciaDias}) async {
     final url = Uri.parse('$baseUrl/pacientes/$id');
 
     final Map<String, dynamic> corpo = {};
@@ -97,7 +100,6 @@ class ApiService {
     if (sequenciaDias != null) {
       corpo["sequencia_dias"] = sequenciaDias;
     }
-
 
     try {
       final response = await http.put(
@@ -124,7 +126,7 @@ class ApiService {
     try {
       final response = await http.delete(url);
 
-      if(response.statusCode == 200) {
+      if (response.statusCode == 200) {
         return true;
       } else {
         return false;
@@ -180,8 +182,8 @@ class ApiService {
     }
   }
 
-  Future<Map<String, dynamic>?> updateMedico(
-    int id, {String? nome, String? email, String? senha, String? crm}) async {
+  Future<Map<String, dynamic>?> updateMedico(int id,
+      {String? nome, String? email, String? senha, String? crm}) async {
     final url = Uri.parse('$baseUrl/medicos/$id');
 
     final Map<String, dynamic> corpo = {};
@@ -218,7 +220,7 @@ class ApiService {
     try {
       final response = await http.delete(url);
 
-      if(response.statusCode == 200){
+      if (response.statusCode == 200) {
         return true;
       } else {
         return false;
@@ -226,11 +228,10 @@ class ApiService {
     } catch (e) {
       return false;
     }
-
   }
 
-  Future<Map<String, dynamic>?> cadastrarSessao(
-      String dataHora, String dificuldadeInfo) async {
+  Future<Map<String, dynamic>?> cadastrarSessao(int idPaciente, String dataHora,
+      double duracao, String dificuldade) async {
     final url = Uri.parse('$baseUrl/sessoes/');
 
     try {
@@ -238,8 +239,10 @@ class ApiService {
         url,
         headers: {"Content-Type": "application/json"},
         body: jsonEncode({
+          "id_paciente": idPaciente,
           "data_hora": dataHora,
-          "dificuldade_info": dificuldadeInfo
+          "duracao_realizada": duracao,
+          "dificuldade_info": dificuldade
         }),
       );
 
@@ -272,8 +275,11 @@ class ApiService {
     }
   }
 
-  Future<Map<String, dynamic>?> updateSessao(
-    int id, {String? dataHora, Float? duracaoRealizada, String? dificuldadeInfo, String? comentarioPaciente}) async {
+  Future<Map<String, dynamic>?> updateSessao(int id,
+      {String? dataHora,
+      double? duracaoRealizada,
+      String? dificuldadeInfo,
+      String? comentarioPaciente}) async {
     final url = Uri.parse('$baseUrl/sessoes/$id');
 
     final Map<String, dynamic> corpo = {};
@@ -310,7 +316,7 @@ class ApiService {
     try {
       final response = await http.delete(url);
 
-      if(response.statusCode == 200){
+      if (response.statusCode == 200) {
         return true;
       } else {
         return false;
@@ -318,6 +324,5 @@ class ApiService {
     } catch (e) {
       return false;
     }
-
   }
 }
