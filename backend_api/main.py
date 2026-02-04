@@ -129,7 +129,7 @@ class MedicoUpdate(BaseModel):
     nome: Optional[str] = None
     email: Optional[str] = None
     senha: Optional[str] = None
-    registro_profissional: Optional[int] = None
+    registro_profissional: Optional[str] = None
     
 class SessaoUpdate(BaseModel):
     data_hora: Optional[datetime] = None
@@ -438,26 +438,3 @@ def login(dados: LoginRequest, db: Session = Depends(get_db)):
 @app.get("/")
 def health_check():
     return {"status": "API online", "mensagem": "FUNCIONOU KCT!"}
-
-def login(dados: LoginRequest, db: Session = Depends(get_db)):
-    print(f"Tentando logar: {dados.email} com senha: {dados.senha}") # DEBUG
-    
-    usuario = db.query(UsuarioDB).filter(UsuarioDB.email == dados.email).first()
-    
-    if not usuario:
-        print("Usuário não encontrado no banco") # DEBUG
-        raise HTTPException(status_code=401, detail="Email incorreto")
-        
-    print(f"Senha no banco: {usuario.senha}") # DEBUG
-    
-    senha_confere = pwd_context.verify(dados.senha, usuario.senha)
-    print(f"A senha bate? {senha_confere}") # DEBUG
-
-    if not senha_confere:
-        raise HTTPException(status_code=401, detail="Senha incorreta")
-    
-    return {
-        "mensagem": "Login deu bom",
-        "id_usuario": usuario.id_usuario,
-        "nome": usuario.nome
-    }
