@@ -13,6 +13,7 @@ class SignUpPageWidget extends StatefulWidget {
 class _SignUpPageWidgetState extends State<SignUpPageWidget> {
   final SignUpController controller = Modular.get<SignUpController>();
   final _dataDisplayController = TextEditingController();
+  final _dataNascimentoController = TextEditingController();
 
   @override
   void initState() {
@@ -55,6 +56,19 @@ class _SignUpPageWidgetState extends State<SignUpPageWidget> {
 
     if (dataEscolhida != null) {
       controller.setSelectedDate(dataEscolhida);
+    }
+  }
+
+  Future<void> _abrirCalendarioNascimento() async {
+    final DateTime? data = await showDatePicker(
+      context: context,
+      initialDate: DateTime(2000), // Padrão mais antigo
+      firstDate: DateTime(1920),
+      lastDate: DateTime.now(),
+    );
+    if (data != null) {
+      controller.setDataNascimento(data); // Cria esse método no controller
+      _dataNascimentoController.text = "${data.day}/${data.month}/${data.year}";
     }
   }
 
@@ -184,6 +198,15 @@ class _SignUpPageWidgetState extends State<SignUpPageWidget> {
           icon: Icons.lock_outline,
           onChanged: (value) => controller.setConfirmarSenha(value),
           obscureText: true,
+        ),
+        const SizedBox(height: 16),
+        _buildInput(
+          controller: _dataNascimentoController,
+          label: 'Data de Nascimento',
+          hint: 'Selecione a data',
+          icon: Icons.cake,
+          readOnly: true,
+          onTap: _abrirCalendarioNascimento,
         ),
         const SizedBox(height: 16),
         if (controller.userType == UserType.medico)

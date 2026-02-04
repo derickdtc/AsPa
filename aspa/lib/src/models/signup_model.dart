@@ -7,6 +7,8 @@ class SignUpFormData {
   UserType userType;
   String? crm;
   DateTime? dataDiagnostico;
+  DateTime? dataNascimento;
+  String? foto;
 
   SignUpFormData({
     required this.nome,
@@ -16,6 +18,8 @@ class SignUpFormData {
     required this.userType,
     this.crm,
     this.dataDiagnostico,
+    this.dataNascimento,
+    this.foto,
   });
 
   // Builder (Cópia dos valores)
@@ -27,6 +31,8 @@ class SignUpFormData {
     UserType? userType,
     String? crm,
     DateTime? dataDiagnostico,
+    DateTime? dataNascimento,
+    String? foto,
   }) {
     return SignUpFormData(
       nome: nome ?? this.nome,
@@ -36,6 +42,8 @@ class SignUpFormData {
       userType: userType ?? this.userType,
       crm: crm ?? this.crm,
       dataDiagnostico: dataDiagnostico ?? this.dataDiagnostico,
+      dataNascimento: dataNascimento ?? this.dataNascimento,
+      foto: foto ?? this.foto,
     );
   }
 
@@ -95,7 +103,13 @@ class SignUpFormData {
       'email': email,
       'senha': senha,
       'tipo': userType == UserType.paciente ? 'paciente' : 'medico',
+      if (foto != null) 'foto': foto,
     };
+
+    if (dataNascimento != null) {
+      baseData['data_nascimento'] =
+          '${dataNascimento!.year}-${dataNascimento!.month.toString().padLeft(2, '0')}-${dataNascimento!.day.toString().padLeft(2, '0')}';
+    }
 
     if (userType == UserType.paciente && dataDiagnostico != null) {
       baseData['data_diagnostico'] =

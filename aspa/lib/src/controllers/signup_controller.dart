@@ -23,10 +23,16 @@ class SignUpController extends ChangeNotifier {
   SignUpFormData get formData => _formData;
   UserType get userType => _formData.userType;
   DateTime? get selectedDate => _formData.dataDiagnostico;
+  DateTime? get dataNascimento => _formData.dataNascimento;
 
   // Setters
   void setUserType(UserType type) {
     _formData = _formData.copyWith(userType: type);
+    notifyListeners();
+  }
+
+  void setDataNascimento(DateTime date) {
+    _formData = _formData.copyWith(dataNascimento: date);
     notifyListeners();
   }
 
@@ -80,6 +86,9 @@ class SignUpController extends ChangeNotifier {
           _formData.email,
           _formData.senha,
           '${_formData.dataDiagnostico!.year}-${_formData.dataDiagnostico!.month.toString().padLeft(2, '0')}-${_formData.dataDiagnostico!.day.toString().padLeft(2, '0')}',
+          dataNascimento: _formData.dataNascimento != null
+              ? '${_formData.dataNascimento!.year}-${_formData.dataNascimento!.month.toString().padLeft(2, '0')}-${_formData.dataNascimento!.day.toString().padLeft(2, '0')}'
+              : null,
         );
       } else {
         resultado = await _api.cadastrarMedico(
