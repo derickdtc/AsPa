@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_modular/flutter_modular.dart';
 import '../controllers/signup_controller.dart';
+import '../models/signup_model.dart';
 
 class SignUpPageWidget extends StatefulWidget {
   const SignUpPageWidget({super.key});
@@ -11,35 +12,36 @@ class SignUpPageWidget extends StatefulWidget {
 
 class _SignUpPageWidgetState extends State<SignUpPageWidget> {
   final SignUpController controller = Modular.get<SignUpController>();
-
-  final _nomeController = TextEditingController();
-  final _emailController = TextEditingController();
-  final _senhaController = TextEditingController();
-  final _senhaConfirmarController = TextEditingController();
-  final _crmController = TextEditingController();
   final _dataDisplayController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     controller.addListener(_onControllerChange);
+    _updateDateDisplay();
   }
 
   void _onControllerChange() {
     if (controller.errorMessage != null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-            content: Text(controller.errorMessage!),
-            backgroundColor: Colors.red),
+          content: Text(controller.errorMessage!),
+          backgroundColor: Colors.red,
+        ),
       );
-      controller.errorMessage = null;
+      controller.clearError();
     }
 
-    // att o texto da data se ela mudar no controller
+    _updateDateDisplay();
+  }
+
+  void _updateDateDisplay() {
     if (controller.selectedDate != null) {
       final d = controller.selectedDate!;
       _dataDisplayController.text =
           "${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}/${d.year}";
+    } else {
+      _dataDisplayController.clear();
     }
   }
 
@@ -52,7 +54,6 @@ class _SignUpPageWidgetState extends State<SignUpPageWidget> {
     );
 
     if (dataEscolhida != null) {
-      // passa a data para o controller guardar
       controller.setSelectedDate(dataEscolhida);
     }
   }
@@ -60,11 +61,6 @@ class _SignUpPageWidgetState extends State<SignUpPageWidget> {
   @override
   void dispose() {
     controller.removeListener(_onControllerChange);
-    _nomeController.dispose();
-    _emailController.dispose();
-    _senhaController.dispose();
-    _senhaConfirmarController.dispose();
-    _crmController.dispose();
     _dataDisplayController.dispose();
     super.dispose();
   }
@@ -89,160 +85,147 @@ class _SignUpPageWidgetState extends State<SignUpPageWidget> {
           elevation: 2,
         ),
         body: ListenableBuilder(
-            listenable: controller,
-            builder: (context, child) {
-              return Center(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Image.asset(
-                        'assets/images/icon.png',
-                        height: 200,
-                        fit: BoxFit.contain,
-                        errorBuilder: (context, error, stackTrace) =>
-                            const Icon(Icons.person, size: 100),
-                      ),
-                      const SizedBox(height: 32),
-                      SizedBox(
-                        width: 316,
-                        child: Column(
-                          children: [
-                            const SizedBox(height: 8),
-                            const Text(
-                              'Eu sou: ',
-                              style: TextStyle(
-                                  fontSize: 16, fontWeight: FontWeight.w600),
-                            ),
-                            const SizedBox(height: 8),
-                            RadioGroup<UserType>(
-                              groupValue: controller.userType,
-                              onChanged: controller.setUserType,
-                              child: Row(
-                                children: const [
-                                  Expanded(
-                                    child: RadioListTile<UserType>(
-                                      title: Text('Paciente'),
-                                      value: UserType.paciente,
-                                    ),
-                                  ),
-                                  Expanded(
-                                    child: RadioListTile<UserType>(
-                                      title: Text('Médico'),
-                                      value: UserType.medico,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      _buildInput(
-                        controller: _nomeController,
-                        label: 'Nome',
-                        hint: 'Digite seu nome',
-                        icon: Icons.person_outline,
-                      ),
-                      const SizedBox(height: 16),
-                      _buildInput(
-                        controller: _emailController,
-                        label: 'E-mail',
-                        hint: 'Digite seu e-mail',
-                        icon: Icons.mail,
-                        isEmail: true,
-                      ),
-                      const SizedBox(height: 16),
-                      _buildInput(
-                        controller: _senhaController,
-                        label: 'Senha',
-                        hint: 'Digite sua senha',
-                        icon: Icons.lock_outline,
-                        isPassword: true,
-                      ),
-                      const SizedBox(height: 16),
-                      _buildInput(
-                        controller: _senhaConfirmarController,
-                        label: 'Confirmar senha',
-                        hint: 'Digite sua senha novamente',
-                        icon: Icons.lock_outline,
-                        isPassword: true,
-                      ),
-                      const SizedBox(height: 16),
-                      if (controller.userType == UserType.medico)
-                        _buildInput(
-                          controller: _crmController,
-                          label: 'CRM',
-                          hint: 'Digite seu CRM',
-                          icon: Icons.badge,
-                        ),
-                      if (controller.userType == UserType.paciente)
-                        _buildInput(
-                          controller: _dataDisplayController,
-                          label: 'Data de Diagnóstico',
-                          hint: 'Toque para selecionar',
-                          icon: Icons.calendar_today,
-                          readOnly: true,
-                          onTap: _abrirCalendario,
-                        ),
-                      const SizedBox(height: 16),
-                      ElevatedButton(
-                        onPressed: controller.isLoading
-                            ? null
-                            : () {
-                                // dispara o cadastro no Controller
-                                controller.cadastrar(
-                                  nome: _nomeController.text,
-                                  email: _emailController.text,
-                                  senha: _senhaController.text,
-                                  confirmarSenha:
-                                      _senhaConfirmarController.text,
-                                  crm: _crmController.text,
-                                );
-                              },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor:
-                              Theme.of(context).colorScheme.primary,
-                          foregroundColor:
-                              Theme.of(context).colorScheme.onPrimary,
-                          minimumSize: const Size(316, 60),
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12)),
-                        ),
-                        child: controller.isLoading
-                            ? const CircularProgressIndicator()
-                            : const Text('Cadastrar',
-                                style: TextStyle(
-                                    fontSize: 20, fontWeight: FontWeight.bold)),
-                      ),
-                    ],
-                  ),
+          listenable: controller,
+          builder: (context, child) {
+            return Center(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Image.asset(
+                      'assets/images/icon.png',
+                      height: 200,
+                      fit: BoxFit.contain,
+                      errorBuilder: (context, error, stackTrace) =>
+                          const Icon(Icons.person, size: 100),
+                    ),
+                    const SizedBox(height: 32),
+                    _buildUserTypeSelector(),
+                    const SizedBox(height: 16),
+                    _buildFormFields(),
+                    const SizedBox(height: 16),
+                    _buildRegisterButton(),
+                  ],
                 ),
-              );
-            }),
+              ),
+            );
+          },
+        ),
       ),
     );
   }
 
+  Widget _buildUserTypeSelector() {
+    return SizedBox(
+      width: 316,
+      child: Column(
+        children: [
+          const SizedBox(height: 8),
+          const Text(
+            'Eu sou: ',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(height: 8),
+          RadioGroup<UserType>(
+            groupValue: controller.userType,
+            onChanged: (value) => controller.setUserType(value!),
+            child: Row(
+              children: [
+                Expanded(
+                  child: RadioListTile<UserType>(
+                    title: const Text('Paciente'),
+                    value: UserType.paciente,
+                  ),
+                ),
+                Expanded(
+                  child: RadioListTile<UserType>(
+                    title: const Text('Médico'),
+                    value: UserType.medico,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFormFields() {
+    return Column(
+      children: [
+        _buildInput(
+          label: 'Nome',
+          hint: 'Digite seu nome',
+          icon: Icons.person_outline,
+          onChanged: (value) => controller.setNome(value),
+        ),
+        const SizedBox(height: 16),
+        _buildInput(
+          label: 'E-mail',
+          hint: 'Digite seu e-mail',
+          icon: Icons.mail,
+          onChanged: (value) => controller.setEmail(value),
+          keyboardType: TextInputType.emailAddress,
+        ),
+        const SizedBox(height: 16),
+        _buildInput(
+          label: 'Senha',
+          hint: 'Digite sua senha',
+          icon: Icons.lock_outline,
+          onChanged: (value) => controller.setSenha(value),
+          obscureText: true,
+        ),
+        const SizedBox(height: 16),
+        _buildInput(
+          label: 'Confirmar senha',
+          hint: 'Digite sua senha novamente',
+          icon: Icons.lock_outline,
+          onChanged: (value) => controller.setConfirmarSenha(value),
+          obscureText: true,
+        ),
+        const SizedBox(height: 16),
+        if (controller.userType == UserType.medico)
+          _buildInput(
+            label: 'CRM',
+            hint: 'Digite seu CRM',
+            icon: Icons.badge,
+            onChanged: (value) => controller.setCrm(value),
+          ),
+        if (controller.userType == UserType.paciente)
+          _buildInput(
+            controller: _dataDisplayController,
+            label: 'Data de Diagnóstico',
+            hint: 'Toque para selecionar',
+            icon: Icons.calendar_today,
+            readOnly: true,
+            onTap: _abrirCalendario,
+          ),
+      ],
+    );
+  }
+
   Widget _buildInput({
-    required TextEditingController controller,
+    TextEditingController? controller,
     required String label,
     required String hint,
     required IconData icon,
-    bool isPassword = false,
-    bool isEmail = false,
+    ValueChanged<String>? onChanged,
     VoidCallback? onTap,
     bool readOnly = false,
+    bool obscureText = false,
+    TextInputType keyboardType = TextInputType.text,
   }) {
     return SizedBox(
       width: 316,
       child: TextField(
         controller: controller,
-        obscureText: isPassword,
-        readOnly: readOnly,
+        onChanged: onChanged,
         onTap: onTap,
-        keyboardType: isEmail ? TextInputType.emailAddress : TextInputType.text,
+        readOnly: readOnly,
+        obscureText: obscureText,
+        keyboardType: keyboardType,
         style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
         decoration: InputDecoration(
           labelText: label,
@@ -251,12 +234,16 @@ class _SignUpPageWidgetState extends State<SignUpPageWidget> {
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
             borderSide: BorderSide(
-                color: Theme.of(context).colorScheme.outline, width: 2),
+              color: Theme.of(context).colorScheme.outline,
+              width: 2,
+            ),
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
             borderSide: BorderSide(
-                color: Theme.of(context).colorScheme.primary, width: 3),
+              color: Theme.of(context).colorScheme.primary,
+              width: 3,
+            ),
           ),
           filled: true,
           fillColor: Theme.of(context)
@@ -265,6 +252,26 @@ class _SignUpPageWidgetState extends State<SignUpPageWidget> {
               .withValues(alpha: 0.3),
         ),
       ),
+    );
+  }
+
+  Widget _buildRegisterButton() {
+    return ElevatedButton(
+      onPressed: controller.isLoading ? null : () => controller.cadastrar(),
+      style: ElevatedButton.styleFrom(
+        backgroundColor: Theme.of(context).colorScheme.primary,
+        foregroundColor: Theme.of(context).colorScheme.onPrimary,
+        minimumSize: const Size(316, 60),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+      ),
+      child: controller.isLoading
+          ? const CircularProgressIndicator()
+          : const Text(
+              'Cadastrar',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            ),
     );
   }
 }

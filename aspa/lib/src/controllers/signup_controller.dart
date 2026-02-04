@@ -1,84 +1,133 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_modular/flutter_modular.dart';
 import '/api_service.dart';
-
-// Enum para tipar a seleção
-enum UserType { paciente, medico }
+import '../models/signup_model.dart';
 
 class SignUpController extends ChangeNotifier {
   final ApiService _api = ApiService();
 
-  bool isLoading = false;
-  String? errorMessage;
+  // Estado
+  bool _isLoading = false;
+  String? _errorMessage;
+  SignUpFormData _formData = SignUpFormData(
+    nome: '',
+    email: '',
+    senha: '',
+    confirmarSenha: '',
+    userType: UserType.paciente,
+  );
 
-  UserType _userType = UserType.paciente;
-  UserType get userType => _userType;
+  // Getters
+  bool get isLoading => _isLoading;
+  String? get errorMessage => _errorMessage;
+  SignUpFormData get formData => _formData;
+  UserType get userType => _formData.userType;
+  DateTime? get selectedDate => _formData.dataDiagnostico;
 
-  DateTime? _selectedDate;
-  DateTime? get selectedDate => _selectedDate;
-
-  void setUserType(UserType? type) {
-    if (type != null) {
-      _userType = type;
-      notifyListeners(); // att a tela para mostrar/esconder campos
-    }
+  // Setters
+  void setUserType(UserType type) {
+    _formData = _formData.copyWith(userType: type);
+    notifyListeners();
   }
 
   void setSelectedDate(DateTime date) {
-    _selectedDate = date;
-    notifyListeners(); // att o texto do input de data
+    _formData = _formData.copyWith(dataDiagnostico: date);
+    notifyListeners();
   }
 
-  Future<void> cadastrar({
-    required String nome,
-    required String email,
-    required String senha,
-    required String confirmarSenha,
-    required String crm,
-  }) async {
-    // validações
-    if (senha != confirmarSenha) {
-      errorMessage = 'As senhas não conferem.';
+  void setNome(String nome) {
+    _formData = _formData.copyWith(nome: nome);
+  }
+
+  void setEmail(String email) {
+    _formData = _formData.copyWith(email: email);
+  }
+
+  void setSenha(String senha) {
+    _formData = _formData.copyWith(senha: senha);
+  }
+
+  void setConfirmarSenha(String confirmarSenha) {
+    _formData = _formData.copyWith(confirmarSenha: confirmarSenha);
+  }
+
+  void setCrm(String crm) {
+    _formData = _formData.copyWith(crm: crm);
+  }
+
+  ValidationResult validateForm() {
+    return _formData.validate();
+  }
+
+  Future<void> cadastrar() async {
+    final validation = validateForm();
+    if (!validation.isValid) {
+      _errorMessage = validation.firstError;
       notifyListeners();
       return;
     }
 
-    if (_userType == UserType.paciente && _selectedDate == null) {
-      errorMessage = 'Selecione a data do diagnóstico!';
-      notifyListeners();
-      return;
-    }
-
-    isLoading = true;
-    errorMessage = null;
+    _isLoading = true;
+    _errorMessage = null;
     notifyListeners();
 
-    Map<String, dynamic>? resultado;
+    try {
+      Map<String, dynamic>? resultado;
 
-    // chamada da API baseada no tipo
-    if (_userType == UserType.paciente) {
-      // formatando a data para YYYY-MM-DD
-      String dataParaAPI = _selectedDate!.toIso8601String().substring(0, 10);
-
-      resultado = await _api.cadastrarPaciente(nome, email, senha, dataParaAPI);
-    } else {
-      resultado = await _api.cadastrarMedico(nome, email, senha, crm);
-    }
-
-    isLoading = false;
-    notifyListeners();
-
-    if (resultado != null) {
-      if (_userType == UserType.paciente) {
-        Modular.to
-            .navigate('/home_paciente', arguments: resultado['id_usuario']);
+      if (_formData.userType == UserType.paciente) {
+        resultado = await _api.cadastrarPaciente(
+          _formData.nome,
+          _formData.email,
+          _formData.senha,
+          '${_formData.dataDiagnostico!.year}-${_formData.dataDiagnostico!.month.toString().padLeft(2, '0')}-${_formData.dataDiagnostico!.day.toString().padLeft(2, '0')}',
+        );
       } else {
-        Modular.to.navigate('/home_medico',
-            arguments: {'id': resultado['id_usuario'], 'name': nome});
+        resultado = await _api.cadastrarMedico(
+          _formData.nome,
+          _formData.email,
+          _formData.senha,
+          _formData.crm!,
+        );
       }
-    } else {
-      errorMessage = 'Erro ao realizar cadastro. Verifique os dados.';
+
+      _isLoading = false;
+
+      if (resultado != null) {
+        final user = RegisteredUser.fromApiResponse(resultado);
+
+        if (_formData.userType == UserType.paciente) {
+          Modular.to.navigate('/home_paciente', arguments: user.id);
+        } else {
+          Modular.to.navigate('/home_medico', arguments: {
+            'id': user.id,
+            'name': user.nome,
+          });
+        }
+      } else {
+        _errorMessage = 'Erro ao realizar cadastro. Verifique os dados.';
+        notifyListeners();
+      }
+    } catch (e) {
+      _isLoading = false;
+      _errorMessage = 'Erro de conexão. Tente novamente.';
       notifyListeners();
     }
+  }
+
+  void resetForm() {
+    _formData = SignUpFormData(
+      nome: '',
+      email: '',
+      senha: '',
+      confirmarSenha: '',
+      userType: UserType.paciente,
+    );
+    _errorMessage = null;
+    notifyListeners();
+  }
+
+  void clearError() {
+    _errorMessage = null;
+    notifyListeners();
   }
 }
