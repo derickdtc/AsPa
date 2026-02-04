@@ -327,4 +327,105 @@ class ApiService {
       return false;
     }
   }
+
+  Future<Map<String, dynamic>?> cadastrarPrescricao(
+    int idPacienteFk,
+    String dataAtualizacao,
+    String observacoesGerais
+  ) async {
+    final url = Uri.parse('$baseUrl/prescricoes/');
+
+    try {
+      final response = await http.post(
+        url,
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode(
+            {
+              "id_paciente_fk": idPacienteFk,
+              "data_atualizacao": dataAtualizacao,
+              "observacoes_gerais": observacoesGerais,
+            }),
+      );
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        // print("Erro de API: ${response.body}");
+        return null;
+      }
+    } catch (e) {
+      // print("Erro de conexão: $e");
+      return null;
+    }
+  }
+
+  Future<Map<String, dynamic>?> getPrescricao(
+    int id
+  ) async {
+    final url = Uri.parse('$baseUrl/prescricoes/$id');
+
+    try {
+      final response = await http.get(url);
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        return null;
+      }
+    } catch (e) {
+      // print("Erro ao buscar paciente: $e");
+      return null;
+    }
+  }
+
+  Future<Map<String, dynamic>?> updatePrescricao(int id,
+      {
+        int? idPacienteFk,
+        String? dataAtualizacao,
+        String? observacoesGerais
+      }) async {
+    final url = Uri.parse('$baseUrl/prescricoes/$id');
+
+    final Map<String, dynamic> corpo = {};
+
+    if (idPacienteFk != null) corpo["id_paciente_fk"] = idPacienteFk;
+    if (dataAtualizacao != null) corpo["data_atualizacao"] = dataAtualizacao;
+    if (observacoesGerais != null) corpo["observacoes_gerais"] = observacoesGerais;
+
+    try {
+      final response = await http.put(
+        url,
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode(corpo),
+      );
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        // print("Erro ao atualizar paciente: ${response.body}");
+        return null;
+      }
+    } catch (e) {
+      // print("Erro de conexão: $e");
+      return null;
+    }
+  }
+
+  Future<bool> deletePrescricao(
+    int id
+  ) async {
+    final url = Uri.parse('$baseUrl/prescricoes/$id');
+
+    try {
+      final response = await http.delete(url);
+
+      if (response.statusCode == 200) {
+        return true;
+      } else {
+        return false;
+      }
+    } catch (e) {
+      return false;
+    }
+  }
 }

@@ -69,6 +69,7 @@ class PacienteDB(Base):
     
     usuario = relationship("UsuarioDB", back_populates="paciente")
     sessoes = relationship("SessaoDB", back_populates="paciente", cascade="all, delete-orphan")
+    prescricoes = relationship("PrescricaoDB", back_populates="paciente", cascade="all, delete-orphan")
     
 class SessaoDB(Base):
     __tablename__ = "sessao"
@@ -82,6 +83,17 @@ class SessaoDB(Base):
     id_paciente = Column("id_paciente_fk",Integer, ForeignKey("paciente.id_paciente"), nullable=False)
     
     paciente = relationship("PacienteDB", back_populates="sessoes")
+    
+class PrescricaoDB(Base):
+    __tablename__ = "prescricao"
+    
+    id_prescricao = Column(Integer, primary_key=True, index=True)
+    data_atualizacao = Column(DateTime)
+    observacoes_gerais = Column(String(300))
+    
+    id_paciente = Column("id_paciente_fk",Integer, ForeignKey("paciente.id_paciente"), nullable=False)
+    
+    paciente = relationship("PacienteDB", back_populates="prescricoes")
 
 # SCHEMAS
 
@@ -100,6 +112,11 @@ class SessionCreate(BaseModel):
     duracao_realizada: float
     dificuldade_info: str
     comentario_paciente: Optional[str] = None
+    
+class PrescricaoCreate(BaseModel):
+    id_paciente: int
+    data_atualizacao: datetime
+    observacoes_gerais: str
 
 # enviando para o Flutter como resposta
 class PacienteResponse(BaseModel):
@@ -141,6 +158,10 @@ class SessaoUpdate(BaseModel):
     duracao_realizada: Optional[float] = None
     dificuldade_info: Optional[str] = None
     comentario_paciente: Optional[str] = None
+    
+class PrescricaoUpdate(BaseModel):
+    data_atualizacao: Optional[datetime] = None
+    observacoes_gerais: Optional[str] = None
     
 # as rotas que o Flutter vai chamar
 app = FastAPI(title="API Parkinson App")
@@ -422,6 +443,62 @@ def delete_sessao(sessao_id: int, db: Session = Depends(get_db)):
     db.commit()
     
     return {"msg": "sessao deletada", "id_sessao": sessao.id_sessao}
+
+@app.post("/prescricoes/")
+def criar_prescricao(prescricao: PrescricaoCreate, db: Session = Depends(get_db)):
+    paciente = db.query(PacienteDB).filter(
+        PacienteDB.id_paciente == prescricao.id_paciente
+    ).first()
+
+    if not paciente:
+        raise HTTPException(status_code=404, detail="Paciente não encontrado")
+    
+    nova_prescricao = PrescricaoDB(data_atualizacao=prescricao.data_atualizacao, observacoes_gerais=prescricao.observacoes_gerais, paciente=paciente)
+    # criando usuário
+    db.add(nova_prescricao)
+    db.commit()
+    db.refresh(nova_prescricao) 
+    
+    return {"msg": "prescricao criada", "id_prescricao": nova_prescricao.id_prescricao, "id_paciente": paciente.id_paciente}
+
+@app.get("/prescricoes/{prescricao_id}")
+def ler_prescricao(prescricao_id: int, db: Session = Depends(get_db)):
+    prescricao = db.query(PrescricaoDB).filter(PrescricaoDB.id_prescricao == prescricao_id).first()
+    
+    if not prescricao:
+        raise HTTPException(status_code=404, detail="Prescricao não encontrada")
+        
+    return prescricao
+
+@app.put("/prescricoes/{prescricao_id}")
+def update_prescricao(prescricao_id: int, dados: PrescricaoUpdate, db: Session = Depends(get_db)):
+    prescricao = db.query(PrescricaoDB).filter(PrescricaoDB.id_prescricao == prescricao_id).first()
+    
+    if not prescricao:
+        raise HTTPException(status_code=404, detail="Prescricao não encontrada")
+    
+    if dados.data_atualizacao is not None:
+        prescricao.data_atualizacao = dados.data_atualizacao
+        
+    if dados.observacoes_gerais is not None:
+        prescricao.observacoes_gerais = dados.observacoes_gerais
+
+    db.commit()
+    db.refresh(prescricao)
+
+    return {"msg": "prescricao alterada", "id_prescricao": prescricao.id_prescricao}
+
+@app.delete("/prescricoes/{prescricao_id}")
+def delete_prescricao(prescricao_id: int, db: Session = Depends(get_db)):
+    prescricao = db.query(PrescricaoDB).filter(PrescricaoDB.id_prescricao == prescricao_id).first()
+    
+    if not prescricao:
+        raise HTTPException(status_code=404, detail="Prescricao não encontrada")
+    
+    db.query(PrescricaoDB).filter(PrescricaoDB.id_prescricao == prescricao_id).delete()
+    db.commit()
+    
+    return {"msg": "prescricao deletada", "id_prescricao": prescricao_id}
     
 @app.post("/login")
 def login(dados: LoginRequest, db: Session = Depends(get_db)):
