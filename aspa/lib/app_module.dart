@@ -17,7 +17,7 @@ import 'src/pages/edit_profile_page.dart';
 import 'src/pages/reminders_page.dart';
 import 'src/pages/jardineiro_game_page.dart';
 import 'src/controllers/login_controller.dart';
-import 'src/controllers/home_controller.dart';
+import 'src/controllers/home_paciente_controller.dart';
 import 'src/controllers/profile_controller.dart';
 
 class AppModule extends Module {

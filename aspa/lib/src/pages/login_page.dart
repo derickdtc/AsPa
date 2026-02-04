@@ -10,7 +10,7 @@ class LoginPageWidget extends StatefulWidget {
 }
 
 class _LoginPageWidgetState extends State<LoginPageWidget> {
-  final LoginController controller = Modular.get<LoginController>();
+  final LoginController controller = LoginController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   bool _passwordVisible = false;
@@ -19,21 +19,28 @@ class _LoginPageWidgetState extends State<LoginPageWidget> {
   void initState() {
     super.initState();
     controller.addListener(_onControllerChange);
+    // vinculando controllers ao controller
+    _emailController
+        .addListener(() => controller.setEmail(_emailController.text));
+    _passwordController
+        .addListener(() => controller.setSenha(_passwordController.text));
   }
 
   void _onControllerChange() {
     if (controller.errorMessage != null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-            content: Text(controller.errorMessage!),
-            backgroundColor: Colors.red),
+          content: Text(controller.errorMessage!),
+          backgroundColor: Colors.red,
+        ),
       );
-      controller.errorMessage = null;
+      controller.clearError();
     }
   }
 
   @override
   void dispose() {
+    controller.removeListener(_onControllerChange);
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
@@ -41,27 +48,27 @@ class _LoginPageWidgetState extends State<LoginPageWidget> {
 
   @override
   Widget build(BuildContext context) {
-    return ListenableBuilder(
-      listenable: controller,
-      builder: (context, child) {
-        return GestureDetector(
-          onTap: () => FocusScope.of(context).unfocus(),
-          child: Scaffold(
-            backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-            appBar: AppBar(
-              backgroundColor: Theme.of(context).colorScheme.primary,
-              centerTitle: true,
-              leading: IconButton(
-                icon: const Icon(Icons.arrow_back_rounded),
-                onPressed: () => Modular.to.pop(),
-              ),
-              title: const Text(
-                'Login',
-                style: TextStyle(fontSize: 22),
-              ),
-              elevation: 2,
-            ),
-            body: Center(
+    return GestureDetector(
+      onTap: () => FocusScope.of(context).unfocus(),
+      child: Scaffold(
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        appBar: AppBar(
+          backgroundColor: Theme.of(context).colorScheme.primary,
+          centerTitle: true,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_rounded),
+            onPressed: () => Modular.to.pop(),
+          ),
+          title: const Text(
+            'Login',
+            style: TextStyle(fontSize: 22),
+          ),
+          elevation: 2,
+        ),
+        body: ListenableBuilder(
+          listenable: controller,
+          builder: (context, child) {
+            return Center(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: Column(
@@ -75,8 +82,6 @@ class _LoginPageWidgetState extends State<LoginPageWidget> {
                           const Icon(Icons.person, size: 100),
                     ),
                     const SizedBox(height: 32),
-
-                    // chamada dos inputs agora funcionais
                     _buildInput(
                       controller: _emailController,
                       label: 'Email',
@@ -93,12 +98,10 @@ class _LoginPageWidgetState extends State<LoginPageWidget> {
                       isPassword: true,
                     ),
                     const SizedBox(height: 32),
-
                     ElevatedButton(
                       onPressed: controller.isLoading
                           ? null
-                          : () => controller.login(
-                              _emailController.text, _passwordController.text),
+                          : () => controller.login(),
                       child: controller.isLoading
                           ? const CircularProgressIndicator()
                           : const Text('Entrar'),
@@ -106,10 +109,10 @@ class _LoginPageWidgetState extends State<LoginPageWidget> {
                   ],
                 ),
               ),
-            ),
-          ),
-        );
-      },
+            );
+          },
+        ),
+      ),
     );
   }
 
@@ -137,7 +140,6 @@ class _LoginPageWidgetState extends State<LoginPageWidget> {
           suffixIcon: isPassword
               ? IconButton(
                   onPressed: () {
-                    // att o estado da tela
                     setState(() {
                       _passwordVisible = !_passwordVisible;
                     });

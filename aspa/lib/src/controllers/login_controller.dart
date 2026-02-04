@@ -1,22 +1,42 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_modular/flutter_modular.dart';
 import '/api_service.dart';
+import '../models/login_model.dart';
 
 class LoginController extends ChangeNotifier {
   final ApiService _api = ApiService();
 
-  bool isLoading = false;
-  String? errorMessage;
+  bool _isLoading = false;
+  String? _errorMessage;
+  final LoginCredentials _credentials = LoginCredentials(email: '', senha: '');
 
-  Future<void> login(String email, String senha) async {
-    isLoading = true;
-    errorMessage = null;
-    notifyListeners(); // Avisa a tela para mostrar o loading
+  bool get isLoading => _isLoading;
+  String? get errorMessage => _errorMessage;
 
-    final resultado = await _api.login(email, senha);
+  void setEmail(String email) {
+    _credentials.email = email;
+  }
 
-    isLoading = false;
+  void setSenha(String senha) {
+    _credentials.senha = senha;
+  }
+
+  Future<void> login() async {
+    // Validação simples
+    final error = _credentials.validate();
+    if (error != null) {
+      _errorMessage = error;
+      notifyListeners();
+      return;
+    }
+
+    _isLoading = true;
+    _errorMessage = null;
     notifyListeners();
+
+    final resultado = await _api.login(_credentials.email, _credentials.senha);
+
+    _isLoading = false;
 
     if (resultado != null) {
       final String tipo = resultado['tipo_usuario'] ?? 'paciente';
@@ -30,8 +50,13 @@ class LoginController extends ChangeNotifier {
         Modular.to.navigate('/home_paciente', arguments: id);
       }
     } else {
-      errorMessage = 'Email ou senha inválidos';
+      _errorMessage = 'Email ou senha inválidos';
       notifyListeners();
     }
+  }
+
+  void clearError() {
+    _errorMessage = null;
+    notifyListeners();
   }
 }
