@@ -237,7 +237,12 @@ class ApiService {
   }
 
   Future<Map<String, dynamic>?> cadastrarSessao(
-      String dataHora, String dificuldadeInfo) async {
+      int idPacienteFk,
+      String dataHora,
+      double duracaoRealizada,
+      String dificuldadeInfo,
+      String comentarioPaciente
+    ) async {
     final url = Uri.parse('$baseUrl/sessoes/');
 
     try {
@@ -245,7 +250,13 @@ class ApiService {
         url,
         headers: {"Content-Type": "application/json"},
         body: jsonEncode(
-            {"data_hora": dataHora, "dificuldade_info": dificuldadeInfo}),
+            {
+              "id_paciente_fk": idPacienteFk,
+              "data_hora": dataHora, 
+              "duracao_realizada": duracaoRealizada,
+              "dificuldade_info": dificuldadeInfo,
+              "comentario_paciente": comentarioPaciente
+            }),
       );
 
       if (response.statusCode == 200) {
@@ -415,6 +426,119 @@ class ApiService {
     int id
   ) async {
     final url = Uri.parse('$baseUrl/prescricoes/$id');
+
+    try {
+      final response = await http.delete(url);
+
+      if (response.statusCode == 200) {
+        return true;
+      } else {
+        return false;
+      }
+    } catch (e) {
+      return false;
+    }
+  }
+
+  Future<Map<String, dynamic>?> cadastrarLembrete(
+    int idPrescricaoFk,
+    String horario,
+    String nomeMedicamento,
+    double doseDiaria,
+    String tipo,
+    String status
+  ) async {
+    final url = Uri.parse('$baseUrl/lembretes/');
+
+    try {
+      final response = await http.post(
+        url,
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode(
+            {
+              "id_prescricao_fk": idPrescricaoFk,
+              "horario": horario,
+              "nome_medicamento": nomeMedicamento,
+              "dose_diaria": doseDiaria,
+              "tipo": tipo,
+              "status": status
+            }),
+      );
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        // print("Erro de API: ${response.body}");
+        return null;
+      }
+    } catch (e) {
+      // print("Erro de conexão: $e");
+      return null;
+    }
+  }
+
+  Future<Map<String, dynamic>?> getLembrete(
+    int id
+  ) async {
+    final url = Uri.parse('$baseUrl/lembretes/$id');
+
+    try {
+      final response = await http.get(url);
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        return null;
+      }
+    } catch (e) {
+      // print("Erro ao buscar paciente: $e");
+      return null;
+    }
+  }
+
+  Future<Map<String, dynamic>?> updateLembrete(int id,
+      {
+        int? idPrescricaoFk,
+        String? horario,
+        String? nomeMedicamento,
+        double? doseDiaria,
+        String? tipo,
+        String? status
+      }) async {
+    final url = Uri.parse('$baseUrl/lembretes/$id');
+
+    final Map<String, dynamic> corpo = {};
+
+    if (idPrescricaoFk != null) corpo["id_prescricao_fk"] = idPrescricaoFk;
+    if (horario != null) corpo["horario"] = horario;    
+    if (nomeMedicamento != null) corpo["nome_medicamento"] = nomeMedicamento;
+    if (doseDiaria != null) corpo["dose_diaria"] = doseDiaria;
+    if (tipo != null) corpo["tipo"] = tipo;
+    if (status != null) corpo["status"] = status;    
+
+    try {
+      final response = await http.put(
+        url,
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode(corpo),
+      );
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        // print("Erro ao atualizar paciente: ${response.body}");
+        return null;
+      }
+    } catch (e) {
+      // print("Erro de conexão: $e");
+      return null;
+    }
+  }
+
+  Future<bool> deleteLembrete(
+    int id
+  ) async {
+    final url = Uri.parse('$baseUrl/lembretes/$id');
 
     try {
       final response = await http.delete(url);
