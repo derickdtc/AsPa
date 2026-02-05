@@ -103,7 +103,10 @@ class _LoginPageWidgetState extends State<LoginPageWidget> {
                           ? null
                           : () => controller.login(),
                       child: controller.isLoading
-                          ? const CircularProgressIndicator()
+                          ? Transform.scale(
+                              scale: 0.5,
+                              child: CircularProgressIndicator(),
+                            )
                           : const Text('Entrar'),
                     ),
                   ],

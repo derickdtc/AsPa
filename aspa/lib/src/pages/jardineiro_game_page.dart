@@ -3,7 +3,8 @@ import '../controllers/jardineiro_game_controller.dart';
 import '../models/jardineiro_game_model.dart';
 
 class JardineiroGamePage extends StatefulWidget {
-  const JardineiroGamePage({super.key});
+  final int userId;
+  const JardineiroGamePage({super.key, required this.userId});
 
   @override
   State<JardineiroGamePage> createState() => _JardineiroGamePageState();
