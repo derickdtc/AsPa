@@ -1,11 +1,11 @@
 from fastapi import FastAPI, HTTPException, Depends
 from pydantic import BaseModel
-from sqlalchemy import create_engine, Column, Integer, String, Date, ForeignKey, DateTime, DOUBLE_PRECISION
+from sqlalchemy import create_engine, Column, Integer, String, Date, ForeignKey, DateTime, DOUBLE_PRECISION, Time
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session, relationship
 from passlib.context import CryptContext
 from typing import Optional
-from datetime import date, datetime
+from datetime import date, datetime, time
 import os
 from dotenv import load_dotenv
 from passlib.context import CryptContext
@@ -94,6 +94,21 @@ class PrescricaoDB(Base):
     id_paciente = Column("id_paciente_fk",Integer, ForeignKey("paciente.id_paciente"), nullable=False)
     
     paciente = relationship("PacienteDB", back_populates="prescricoes")
+    lembretes = relationship("LembreteDB", back_populates="prescricao", cascade="all, delete-orphan")
+    
+class LembreteDB(Base):
+    __tablename__ = "lembrete"
+    
+    id_lembrete = Column(Integer, primary_key=True, index=True)
+    horario = Column(Time)
+    nome_medicamento = Column(String(100))
+    dose_diaria = Column(DOUBLE_PRECISION)
+    tipo = Column(String(20))
+    status = Column(String(10))
+    
+    id_prescricao = Column("id_prescricao_fk",Integer, ForeignKey("prescricao.id_prescricao"), nullable=False)
+    
+    prescricao = relationship("PrescricaoDB", back_populates="lembretes")
 
 # SCHEMAS
 
@@ -117,6 +132,14 @@ class PrescricaoCreate(BaseModel):
     id_paciente: int
     data_atualizacao: datetime
     observacoes_gerais: str
+    
+class LembreteCreate(BaseModel):
+    id_prescricao: int
+    horario: time
+    nome_medicamento: str
+    dose_diaria: float
+    tipo: str
+    status: str
 
 # enviando para o Flutter como resposta
 class PacienteResponse(BaseModel):
@@ -162,6 +185,13 @@ class SessaoUpdate(BaseModel):
 class PrescricaoUpdate(BaseModel):
     data_atualizacao: Optional[datetime] = None
     observacoes_gerais: Optional[str] = None
+    
+class LembreteUpdate(BaseModel):
+    horario: Optional[time] = None
+    nome_medicamento: Optional[str] = None
+    dose_diaria: Optional[float] = None
+    tipo: Optional[str] = None
+    status: Optional[str] = None 
     
 # as rotas que o Flutter vai chamar
 app = FastAPI(title="API Parkinson App")
@@ -499,6 +529,72 @@ def delete_prescricao(prescricao_id: int, db: Session = Depends(get_db)):
     db.commit()
     
     return {"msg": "prescricao deletada", "id_prescricao": prescricao_id}
+
+@app.post("/lembretes/")
+def criar_lembrete(lembrete: LembreteCreate, db: Session = Depends(get_db)):
+    prescricao = db.query(PrescricaoDB).filter(
+        PrescricaoDB.id_prescricao == lembrete.id_prescricao
+    ).first()
+
+    if not prescricao:
+        raise HTTPException(status_code=404, detail="Prescricao não encontrada")
+    
+    novo_lembrete = LembreteDB(horario = lembrete.horario, nome_medicamento = lembrete.nome_medicamento, dose_diaria = lembrete.dose_diaria, 
+                                tipo = lembrete.tipo, status = lembrete.status, prescricao=prescricao)
+    # criando usuário
+    db.add(novo_lembrete)
+    db.commit()
+    db.refresh(novo_lembrete) 
+    
+    return {"msg": "lembrete criado", "id_lembrete": novo_lembrete.id_lembrete, "id_prescricao": prescricao.id_prescricao}
+
+@app.get("/lembretes/{lembrete_id}")
+def ler_lembrete(lembrete_id: int, db: Session = Depends(get_db)):
+    lembrete = db.query(LembreteDB).filter(LembreteDB.id_lembrete == lembrete_id).first()
+    
+    if not lembrete:
+        raise HTTPException(status_code=404, detail="Lembrete não encontrado")
+        
+    return lembrete
+
+@app.put("/lembretes/{lembrete_id}")
+def update_lembrete(lembrete_id: int, dados: LembreteUpdate, db: Session = Depends(get_db)):
+    lembrete = db.query(LembreteDB).filter(LembreteDB.id_lembrete == lembrete_id).first()
+    
+    if not lembrete:
+        raise HTTPException(status_code=404, detail="Lembrete não encontrado")
+    
+    if dados.horario is not None:
+        lembrete.horario = dados.horario
+        
+    if dados.nome_medicamento is not None:
+        lembrete.nome_medicamento = dados.nome_medicamento
+        
+    if dados.dose_diaria is not None:
+        lembrete.dose_diaria = dados.dose_diaria
+        
+    if dados.tipo is not None:
+        lembrete.tipo = dados.tipo
+        
+    if dados.status is not None:
+        lembrete.status = dados.status
+
+    db.commit()
+    db.refresh(lembrete)
+
+    return {"msg": "lembrete alterado", "id_lembrete": lembrete_id}
+
+@app.delete("/lembretes/{lembrete_id}")
+def delete_lembrete(lembrete_id: int, db: Session = Depends(get_db)):
+    lembrete = db.query(LembreteDB).filter(LembreteDB.id_lembrete == lembrete_id).first()
+    
+    if not lembrete:
+        raise HTTPException(status_code=404, detail="Lembrete não encontrado")
+    
+    db.query(LembreteDB).filter(LembreteDB.id_lembrete == lembrete_id).delete()
+    db.commit()
+    
+    return {"msg": "lembrete deletada", "id_lembrete": lembrete_id}
     
 @app.post("/login")
 def login(dados: LoginRequest, db: Session = Depends(get_db)):
