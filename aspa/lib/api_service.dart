@@ -553,6 +553,116 @@ class ApiService {
     }
   }
 
+  Future<Map<String, dynamic>?> cadastrarPrescricaoExercicio(
+    int idPrescricaoFk,
+    int idExercicioFk,
+    int repeticoes,
+    int duracaoMinutos,
+    int frequenciaSemanal,
+    String observacoes
+  ) async {
+    final url = Uri.parse('$baseUrl/prescricoes/$idPrescricaoFk/exercicios');
+
+    try {
+      final response = await http.post(
+        url,
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode(
+            {
+              "id_prescricao_fk": idPrescricaoFk,
+              "id_exercicio_fk": idExercicioFk,
+              "repeticoes": repeticoes,
+              "duracao_minutos": duracaoMinutos,
+              "frequencia_semanal": frequenciaSemanal,
+              "observacoes": observacoes
+            }),
+      );
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        // print("Erro de API: ${response.body}");
+        return null;
+      }
+    } catch (e) {
+      // print("Erro de conexão: $e");
+      return null;
+    }
+  }
+
+  Future<Map<String, dynamic>?> getPrescricaoExercicio(
+    int idPrescricao, int idExercicio
+  ) async {
+    final url = Uri.parse('$baseUrl/prescricoes/$idPrescricao/exercicios/$idExercicio');
+
+    try {
+      final response = await http.get(url);
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        return null;
+      }
+    } catch (e) {
+      // print("Erro ao buscar paciente: $e");
+      return null;
+    }
+  }
+
+  Future<Map<String, dynamic>?> updatePrescricaoExercicio(int idPrescricao, int idExercicio,
+      {
+        int? repeticoes,
+        int? duracaoMinutos,
+        int? frequenciaSemanal,
+        String? observacoes
+      }) async {
+    final url = Uri.parse('$baseUrl/prescricoes/$idPrescricao/exercicios/$idExercicio');
+
+    final Map<String, dynamic> corpo = {};
+
+    if (repeticoes != null) corpo["repeticoes"] = repeticoes;
+    if (duracaoMinutos != null) corpo["duracao_minutos"] = duracaoMinutos;
+    if (frequenciaSemanal != null) corpo["frequencia_semanal"] = frequenciaSemanal;
+    if (observacoes != null) corpo["observacoes"] = observacoes;  
+
+    try {
+      final response = await http.put(
+        url,
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode(corpo),
+      );
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        // print("Erro ao atualizar paciente: ${response.body}");
+        return null;
+      }
+    } catch (e) {
+      // print("Erro de conexão: $e");
+      return null;
+    }
+  }
+
+  Future<bool> deletePrescricaoExercicio(
+    int idPrescricao,
+    int idExercicio
+  ) async {
+    final url = Uri.parse('$baseUrl/prescricoes/$idPrescricao/exercicios/$idExercicio');
+
+    try {
+      final response = await http.delete(url);
+
+      if (response.statusCode == 200) {
+        return true;
+      } else {
+        return false;
+      }
+    } catch (e) {
+      return false;
+    }
+  }
+
   Future<Map<String, dynamic>?> cadastrarExercicio(
     String nome,
     String descricao,

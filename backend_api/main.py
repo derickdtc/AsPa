@@ -1,6 +1,6 @@
 from fastapi import FastAPI, HTTPException, Depends
 from pydantic import BaseModel
-from sqlalchemy import create_engine, Column, Integer, String, Date, ForeignKey, DateTime, DOUBLE_PRECISION, Time
+from sqlalchemy import create_engine, Column, Integer, String, Date, ForeignKey, DateTime, DOUBLE_PRECISION, Time, and_
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session, relationship
 from passlib.context import CryptContext
@@ -96,6 +96,8 @@ class PrescricaoDB(Base):
     paciente = relationship("PacienteDB", back_populates="prescricoes")
     lembretes = relationship("LembreteDB", back_populates="prescricao", cascade="all, delete-orphan")
     
+    prescricao_exercicio = relationship("PrescricaoExercicioDB", back_populates="prescricao")
+    
 class LembreteDB(Base):
     __tablename__ = "lembrete"
     
@@ -119,6 +121,22 @@ class ExercicioDB(Base):
     video_url = Column(String(255))
     tipo = Column(String(30))
     dificuldade_padrao = Column(String(10))
+    
+    prescricao_exercicio = relationship("PrescricaoExercicioDB", back_populates="exercicio")
+    
+class PrescricaoExercicioDB(Base):
+    __tablename__ = "prescricao_exercicio"
+    
+    repeticoes = Column(Integer)
+    duracao_minutos = Column(Integer)
+    frequencia_semanal = Column(Integer)
+    observacoes = Column(String(300))
+    
+    id_prescricao_fk = Column("id_prescricao_fk",Integer, ForeignKey("prescricao.id_prescricao"), primary_key=True)
+    id_exercicio_fk = Column("id_exercicio_fk",Integer, ForeignKey("exercicio.id_exercicio"), primary_key=True)    
+    
+    prescricao = relationship("PrescricaoDB", back_populates="prescricao_exercicio")
+    exercicio = relationship("ExercicioDB", back_populates="prescricao_exercicio")
 
 # SCHEMAS
 
@@ -157,6 +175,14 @@ class ExercicioCreate(BaseModel):
     video_url: str
     tipo: str
     dificuldade_padrao: str
+    
+class PrescricaoExercicioCreate(BaseModel):
+    id_prescricao: int
+    id_exercicio: int
+    repeticoes: int
+    duracao_minutos: int
+    frequencia_semanal: int
+    observacoes: str
 
 # enviando para o Flutter como resposta
 class PacienteResponse(BaseModel):
@@ -216,6 +242,12 @@ class ExercicioUpdate(BaseModel):
     video_url: Optional[str] = None
     tipo: Optional[str] = None
     dificuldade_padrao: Optional[str] = None
+    
+class PrescricaoExercicioUpdate(BaseModel):
+    repeticoes: Optional[int] = None
+    duracao_minutos: Optional[int] = None
+    frequencia_semanal: Optional[int] = None
+    observacoes: Optional[str] = None
     
 # as rotas que o Flutter vai chamar
 app = FastAPI(title="API Parkinson App")
@@ -679,6 +711,67 @@ def delete_exercicio(exercicio_id: int, db: Session = Depends(get_db)):
     db.commit()
     
     return {"msg": "exercício deletado", "id_exercicio": exercicio_id}
+
+@app.post("/prescricoes/{prescricao_id}/exercicios")
+def criar_prescricao_exercicio(prescricao_id: int ,prescricaoExercicio: PrescricaoExercicioCreate, db: Session = Depends(get_db)):
+    
+    nova_prescricao_exercicio = PrescricaoExercicioDB(id_prescricao_fk=prescricao_id, id_exercicio_fk=prescricaoExercicio.id_exercicio, repeticoes=prescricaoExercicio.repeticoes,
+                                                      duracao_minutos=prescricaoExercicio.duracao_minutos, frequencia_semanal=prescricaoExercicio.frequencia_semanal,
+                                                      observacoes=prescricaoExercicio.observacoes)
+    # criando usuário
+    db.add(nova_prescricao_exercicio)
+    db.commit()
+    db.refresh(nova_prescricao_exercicio) 
+    
+    return {"msg": "prescricao_exercicio criado", "id_exercicio": prescricaoExercicio.id_exercicio, "id_prescricao": prescricao_id}
+
+@app.get("/prescricoes/{prescricao_id}/exercicios/{exercicio_id}")
+def ler_prescricao_exercicio(exercicio_id: int, prescricao_id: int, db: Session = Depends(get_db)):
+    prescricao_exercicio = db.query(PrescricaoExercicioDB).filter(and_(PrescricaoExercicioDB.id_exercicio_fk == exercicio_id,
+                                                                       PrescricaoExercicioDB.id_prescricao_fk == prescricao_id)).first()
+    
+    if not prescricao_exercicio:
+        raise HTTPException(status_code=404, detail="prescricao_exercicio não encontrado")
+        
+    return prescricao_exercicio
+
+@app.put("/prescricoes/{prescricao_id}/exercicios/{exercicio_id}")
+def update_prescricao_exercicio(exercicio_id: int, prescricao_id: int, dados: PrescricaoExercicioUpdate, db: Session = Depends(get_db)):
+    prescricao_exercicio = db.query(PrescricaoExercicioDB).filter(and_(PrescricaoExercicioDB.id_exercicio_fk == exercicio_id,
+                                                                       PrescricaoExercicioDB.id_prescricao_fk == prescricao_id)).first()
+    
+    if not prescricao_exercicio:
+        raise HTTPException(status_code=404, detail="prescricao_exercicio não encontrado")
+    
+    if dados.repeticoes is not None:
+        prescricao_exercicio.repeticoes = dados.repeticoes
+
+    if dados.duracao_minutos is not None:
+        prescricao_exercicio.duracao_minutos = dados.duracao_minutos
+    
+    if dados.frequencia_semanal is not None:
+        prescricao_exercicio.frequencia_semanal = dados.frequencia_semanal
+    
+    if dados.observacoes is not None:
+        prescricao_exercicio.observacoes = dados.observacoes
+        
+    db.commit()
+    db.refresh(prescricao_exercicio)
+
+    return {"msg": "prescricao_exercicio alterado", "id_prescricao": prescricao_id,"id_exercicio": exercicio_id}
+
+@app.delete("/prescricoes/{prescricao_id}/exercicios/{exercicio_id}")
+def delete_prescricao_exercicio(exercicio_id: int, prescricao_id: int, db: Session = Depends(get_db)):
+    prescricao_exercicio = db.query(PrescricaoExercicioDB).filter(and_(PrescricaoExercicioDB.id_exercicio_fk == exercicio_id,
+                                                                       PrescricaoExercicioDB.id_prescricao_fk == prescricao_id)).first()
+    
+    if not prescricao_exercicio:
+        raise HTTPException(status_code=404, detail="prescricao_exercicio não encontrado")
+    
+    db.query(PrescricaoExercicioDB).filter(and_(PrescricaoExercicioDB.id_exercicio_fk == exercicio_id, PrescricaoExercicioDB.id_prescricao_fk == prescricao_id)).delete()
+    db.commit()
+    
+    return {"msg": "prescricao_exercicio deletado", "id_prescricao": prescricao_id,"id_exercicio": exercicio_id}
     
 @app.post("/login")
 def login(dados: LoginRequest, db: Session = Depends(get_db)):
