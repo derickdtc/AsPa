@@ -110,6 +110,16 @@ class LembreteDB(Base):
     
     prescricao = relationship("PrescricaoDB", back_populates="lembretes")
 
+class ExercicioDB(Base):
+    __tablename__ = "exercicio"
+    
+    id_exercicio = Column(Integer, primary_key=True, index=True)
+    nome = Column(String(100))
+    descricao = Column(String(300))
+    video_url = Column(String(255))
+    tipo = Column(String(30))
+    dificuldade_padrao = Column(String(10))
+
 # SCHEMAS
 
 # recebendo do Flutter para criar conta
@@ -140,6 +150,13 @@ class LembreteCreate(BaseModel):
     dose_diaria: float
     tipo: str
     status: str
+    
+class ExercicioCreate(BaseModel):
+    nome: str
+    descricao: str
+    video_url: str
+    tipo: str
+    dificuldade_padrao: str
 
 # enviando para o Flutter como resposta
 class PacienteResponse(BaseModel):
@@ -192,6 +209,13 @@ class LembreteUpdate(BaseModel):
     dose_diaria: Optional[float] = None
     tipo: Optional[str] = None
     status: Optional[str] = None 
+    
+class ExercicioUpdate(BaseModel):
+    nome: Optional[str] = None
+    descricao: Optional[str] = None
+    video_url: Optional[str] = None
+    tipo: Optional[str] = None
+    dificuldade_padrao: Optional[str] = None
     
 # as rotas que o Flutter vai chamar
 app = FastAPI(title="API Parkinson App")
@@ -594,7 +618,67 @@ def delete_lembrete(lembrete_id: int, db: Session = Depends(get_db)):
     db.query(LembreteDB).filter(LembreteDB.id_lembrete == lembrete_id).delete()
     db.commit()
     
-    return {"msg": "lembrete deletada", "id_lembrete": lembrete_id}
+    return {"msg": "lembrete deletado", "id_lembrete": lembrete_id}
+
+@app.post("/exercicios/")
+def criar_exercicio(exercicio: ExercicioCreate, db: Session = Depends(get_db)):
+    
+    novo_exercicio = ExercicioDB(nome = exercicio.nome, descricao = exercicio.descricao, video_url = exercicio.video_url,
+                                 tipo = exercicio.tipo, dificuldade_padrao = exercicio.dificuldade_padrao)
+    # criando usuário
+    db.add(novo_exercicio)
+    db.commit()
+    db.refresh(novo_exercicio) 
+    
+    return {"msg": "exercício criado", "id_exercicio": novo_exercicio.id_exercicio}
+
+@app.get("/exercicios/{exercicios_id}")
+def ler_exercicio(exercicio_id: int, db: Session = Depends(get_db)):
+    exercicio = db.query(ExercicioDB).filter(ExercicioDB.id_exercicio == exercicio_id).first()
+    
+    if not exercicio:
+        raise HTTPException(status_code=404, detail="Exercício não encontrado")
+        
+    return exercicio
+
+@app.put("/exercicios/{exercicio_id}")
+def update_exercicio(exercicio_id: int, dados: ExercicioUpdate, db: Session = Depends(get_db)):
+    exercicio = db.query(ExercicioDB).filter(ExercicioDB.id_exercicio == exercicio_id).first()
+    
+    if not exercicio:
+        raise HTTPException(status_code=404, detail="Exercício não encontrado")
+    
+    if dados.nome is not None:
+        exercicio.nome = dados.nome
+        
+    if dados.descricao is not None:
+        exercicio.descricao = dados.descricao
+        
+    if dados.video_url is not None:
+        exercicio.video_url = dados.video_url
+        
+    if dados.tipo is not None:
+        exercicio.tipo = dados.tipo
+        
+    if dados.dificuldade_padrao is not None:
+        exercicio.dificuldade_padrao = dados.dificuldade_padrao   
+        
+    db.commit()
+    db.refresh(exercicio)
+
+    return {"msg": "exercício alterado", "id_exercicio": exercicio_id}
+
+@app.delete("/exercicios/{exercicio_id}")
+def delete_exercicio(exercicio_id: int, db: Session = Depends(get_db)):
+    exercicio = db.query(ExercicioDB).filter(ExercicioDB.id_exercicio == exercicio_id).first()
+    
+    if not exercicio:
+        raise HTTPException(status_code=404, detail="Exercício não encontrado")
+    
+    db.query(ExercicioDB).filter(ExercicioDB.id_exercicio == exercicio_id).delete()
+    db.commit()
+    
+    return {"msg": "exercício deletado", "id_exercicio": exercicio_id}
     
 @app.post("/login")
 def login(dados: LoginRequest, db: Session = Depends(get_db)):
