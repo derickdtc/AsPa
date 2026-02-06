@@ -1,11 +1,11 @@
 from fastapi import FastAPI, HTTPException, Depends
 from pydantic import BaseModel
-from sqlalchemy import create_engine, Column, Integer, String, Date, ForeignKey, DateTime, DOUBLE_PRECISION
+from sqlalchemy import create_engine, Column, Integer, String, Date, ForeignKey, DateTime, DOUBLE_PRECISION, Time, and_
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session, relationship
 from passlib.context import CryptContext
 from typing import Optional
-from datetime import date, datetime
+from datetime import date, datetime, time
 import os
 from dotenv import load_dotenv
 from passlib.context import CryptContext
@@ -69,6 +69,7 @@ class PacienteDB(Base):
     
     usuario = relationship("UsuarioDB", back_populates="paciente")
     sessoes = relationship("SessaoDB", back_populates="paciente", cascade="all, delete-orphan")
+    prescricoes = relationship("PrescricaoDB", back_populates="paciente", cascade="all, delete-orphan")
     
 class SessaoDB(Base):
     __tablename__ = "sessao"
@@ -82,6 +83,60 @@ class SessaoDB(Base):
     id_paciente = Column("id_paciente_fk",Integer, ForeignKey("paciente.id_paciente"), nullable=False)
     
     paciente = relationship("PacienteDB", back_populates="sessoes")
+    
+class PrescricaoDB(Base):
+    __tablename__ = "prescricao"
+    
+    id_prescricao = Column(Integer, primary_key=True, index=True)
+    data_atualizacao = Column(DateTime)
+    observacoes_gerais = Column(String(300))
+    
+    id_paciente = Column("id_paciente_fk",Integer, ForeignKey("paciente.id_paciente"), nullable=False)
+    
+    paciente = relationship("PacienteDB", back_populates="prescricoes")
+    lembretes = relationship("LembreteDB", back_populates="prescricao", cascade="all, delete-orphan")
+    
+    prescricao_exercicio = relationship("PrescricaoExercicioDB", back_populates="prescricao")
+    
+class LembreteDB(Base):
+    __tablename__ = "lembrete"
+    
+    id_lembrete = Column(Integer, primary_key=True, index=True)
+    horario = Column(Time)
+    nome_medicamento = Column(String(100))
+    dose_diaria = Column(DOUBLE_PRECISION)
+    tipo = Column(String(20))
+    status = Column(String(10))
+    
+    id_prescricao = Column("id_prescricao_fk",Integer, ForeignKey("prescricao.id_prescricao"), nullable=False)
+    
+    prescricao = relationship("PrescricaoDB", back_populates="lembretes")
+
+class ExercicioDB(Base):
+    __tablename__ = "exercicio"
+    
+    id_exercicio = Column(Integer, primary_key=True, index=True)
+    nome = Column(String(100))
+    descricao = Column(String(300))
+    video_url = Column(String(255))
+    tipo = Column(String(30))
+    dificuldade_padrao = Column(String(10))
+    
+    prescricao_exercicio = relationship("PrescricaoExercicioDB", back_populates="exercicio")
+    
+class PrescricaoExercicioDB(Base):
+    __tablename__ = "prescricao_exercicio"
+    
+    repeticoes = Column(Integer)
+    duracao_minutos = Column(Integer)
+    frequencia_semanal = Column(Integer)
+    observacoes = Column(String(300))
+    
+    id_prescricao_fk = Column("id_prescricao_fk",Integer, ForeignKey("prescricao.id_prescricao"), primary_key=True)
+    id_exercicio_fk = Column("id_exercicio_fk",Integer, ForeignKey("exercicio.id_exercicio"), primary_key=True)    
+    
+    prescricao = relationship("PrescricaoDB", back_populates="prescricao_exercicio")
+    exercicio = relationship("ExercicioDB", back_populates="prescricao_exercicio")
 
 # SCHEMAS
 
@@ -100,6 +155,34 @@ class SessionCreate(BaseModel):
     duracao_realizada: float
     dificuldade_info: str
     comentario_paciente: Optional[str] = None
+    
+class PrescricaoCreate(BaseModel):
+    id_paciente: int
+    data_atualizacao: datetime
+    observacoes_gerais: str
+    
+class LembreteCreate(BaseModel):
+    id_prescricao: int
+    horario: time
+    nome_medicamento: str
+    dose_diaria: float
+    tipo: str
+    status: str
+    
+class ExercicioCreate(BaseModel):
+    nome: str
+    descricao: str
+    video_url: str
+    tipo: str
+    dificuldade_padrao: str
+    
+class PrescricaoExercicioCreate(BaseModel):
+    id_prescricao: int
+    id_exercicio: int
+    repeticoes: int
+    duracao_minutos: int
+    frequencia_semanal: int
+    observacoes: str
 
 # enviando para o Flutter como resposta
 class PacienteResponse(BaseModel):
@@ -141,6 +224,30 @@ class SessaoUpdate(BaseModel):
     duracao_realizada: Optional[float] = None
     dificuldade_info: Optional[str] = None
     comentario_paciente: Optional[str] = None
+    
+class PrescricaoUpdate(BaseModel):
+    data_atualizacao: Optional[datetime] = None
+    observacoes_gerais: Optional[str] = None
+    
+class LembreteUpdate(BaseModel):
+    horario: Optional[time] = None
+    nome_medicamento: Optional[str] = None
+    dose_diaria: Optional[float] = None
+    tipo: Optional[str] = None
+    status: Optional[str] = None 
+    
+class ExercicioUpdate(BaseModel):
+    nome: Optional[str] = None
+    descricao: Optional[str] = None
+    video_url: Optional[str] = None
+    tipo: Optional[str] = None
+    dificuldade_padrao: Optional[str] = None
+    
+class PrescricaoExercicioUpdate(BaseModel):
+    repeticoes: Optional[int] = None
+    duracao_minutos: Optional[int] = None
+    frequencia_semanal: Optional[int] = None
+    observacoes: Optional[str] = None
     
 # as rotas que o Flutter vai chamar
 app = FastAPI(title="API Parkinson App")
@@ -422,6 +529,249 @@ def delete_sessao(sessao_id: int, db: Session = Depends(get_db)):
     db.commit()
     
     return {"msg": "sessao deletada", "id_sessao": sessao.id_sessao}
+
+@app.post("/prescricoes/")
+def criar_prescricao(prescricao: PrescricaoCreate, db: Session = Depends(get_db)):
+    paciente = db.query(PacienteDB).filter(
+        PacienteDB.id_paciente == prescricao.id_paciente
+    ).first()
+
+    if not paciente:
+        raise HTTPException(status_code=404, detail="Paciente não encontrado")
+    
+    nova_prescricao = PrescricaoDB(data_atualizacao=prescricao.data_atualizacao, observacoes_gerais=prescricao.observacoes_gerais, paciente=paciente)
+    # criando usuário
+    db.add(nova_prescricao)
+    db.commit()
+    db.refresh(nova_prescricao) 
+    
+    return {"msg": "prescricao criada", "id_prescricao": nova_prescricao.id_prescricao, "id_paciente": paciente.id_paciente}
+
+@app.get("/prescricoes/{prescricao_id}")
+def ler_prescricao(prescricao_id: int, db: Session = Depends(get_db)):
+    prescricao = db.query(PrescricaoDB).filter(PrescricaoDB.id_prescricao == prescricao_id).first()
+    
+    if not prescricao:
+        raise HTTPException(status_code=404, detail="Prescricao não encontrada")
+        
+    return prescricao
+
+@app.put("/prescricoes/{prescricao_id}")
+def update_prescricao(prescricao_id: int, dados: PrescricaoUpdate, db: Session = Depends(get_db)):
+    prescricao = db.query(PrescricaoDB).filter(PrescricaoDB.id_prescricao == prescricao_id).first()
+    
+    if not prescricao:
+        raise HTTPException(status_code=404, detail="Prescricao não encontrada")
+    
+    if dados.data_atualizacao is not None:
+        prescricao.data_atualizacao = dados.data_atualizacao
+        
+    if dados.observacoes_gerais is not None:
+        prescricao.observacoes_gerais = dados.observacoes_gerais
+
+    db.commit()
+    db.refresh(prescricao)
+
+    return {"msg": "prescricao alterada", "id_prescricao": prescricao.id_prescricao}
+
+@app.delete("/prescricoes/{prescricao_id}")
+def delete_prescricao(prescricao_id: int, db: Session = Depends(get_db)):
+    prescricao = db.query(PrescricaoDB).filter(PrescricaoDB.id_prescricao == prescricao_id).first()
+    
+    if not prescricao:
+        raise HTTPException(status_code=404, detail="Prescricao não encontrada")
+    
+    db.query(PrescricaoDB).filter(PrescricaoDB.id_prescricao == prescricao_id).delete()
+    db.commit()
+    
+    return {"msg": "prescricao deletada", "id_prescricao": prescricao_id}
+
+@app.post("/lembretes/")
+def criar_lembrete(lembrete: LembreteCreate, db: Session = Depends(get_db)):
+    prescricao = db.query(PrescricaoDB).filter(
+        PrescricaoDB.id_prescricao == lembrete.id_prescricao
+    ).first()
+
+    if not prescricao:
+        raise HTTPException(status_code=404, detail="Prescricao não encontrada")
+    
+    novo_lembrete = LembreteDB(horario = lembrete.horario, nome_medicamento = lembrete.nome_medicamento, dose_diaria = lembrete.dose_diaria, 
+                                tipo = lembrete.tipo, status = lembrete.status, prescricao=prescricao)
+    # criando usuário
+    db.add(novo_lembrete)
+    db.commit()
+    db.refresh(novo_lembrete) 
+    
+    return {"msg": "lembrete criado", "id_lembrete": novo_lembrete.id_lembrete, "id_prescricao": prescricao.id_prescricao}
+
+@app.get("/lembretes/{lembrete_id}")
+def ler_lembrete(lembrete_id: int, db: Session = Depends(get_db)):
+    lembrete = db.query(LembreteDB).filter(LembreteDB.id_lembrete == lembrete_id).first()
+    
+    if not lembrete:
+        raise HTTPException(status_code=404, detail="Lembrete não encontrado")
+        
+    return lembrete
+
+@app.put("/lembretes/{lembrete_id}")
+def update_lembrete(lembrete_id: int, dados: LembreteUpdate, db: Session = Depends(get_db)):
+    lembrete = db.query(LembreteDB).filter(LembreteDB.id_lembrete == lembrete_id).first()
+    
+    if not lembrete:
+        raise HTTPException(status_code=404, detail="Lembrete não encontrado")
+    
+    if dados.horario is not None:
+        lembrete.horario = dados.horario
+        
+    if dados.nome_medicamento is not None:
+        lembrete.nome_medicamento = dados.nome_medicamento
+        
+    if dados.dose_diaria is not None:
+        lembrete.dose_diaria = dados.dose_diaria
+        
+    if dados.tipo is not None:
+        lembrete.tipo = dados.tipo
+        
+    if dados.status is not None:
+        lembrete.status = dados.status
+
+    db.commit()
+    db.refresh(lembrete)
+
+    return {"msg": "lembrete alterado", "id_lembrete": lembrete_id}
+
+@app.delete("/lembretes/{lembrete_id}")
+def delete_lembrete(lembrete_id: int, db: Session = Depends(get_db)):
+    lembrete = db.query(LembreteDB).filter(LembreteDB.id_lembrete == lembrete_id).first()
+    
+    if not lembrete:
+        raise HTTPException(status_code=404, detail="Lembrete não encontrado")
+    
+    db.query(LembreteDB).filter(LembreteDB.id_lembrete == lembrete_id).delete()
+    db.commit()
+    
+    return {"msg": "lembrete deletado", "id_lembrete": lembrete_id}
+
+@app.post("/exercicios/")
+def criar_exercicio(exercicio: ExercicioCreate, db: Session = Depends(get_db)):
+    
+    novo_exercicio = ExercicioDB(nome = exercicio.nome, descricao = exercicio.descricao, video_url = exercicio.video_url,
+                                 tipo = exercicio.tipo, dificuldade_padrao = exercicio.dificuldade_padrao)
+    # criando usuário
+    db.add(novo_exercicio)
+    db.commit()
+    db.refresh(novo_exercicio) 
+    
+    return {"msg": "exercício criado", "id_exercicio": novo_exercicio.id_exercicio}
+
+@app.get("/exercicios/{exercicios_id}")
+def ler_exercicio(exercicio_id: int, db: Session = Depends(get_db)):
+    exercicio = db.query(ExercicioDB).filter(ExercicioDB.id_exercicio == exercicio_id).first()
+    
+    if not exercicio:
+        raise HTTPException(status_code=404, detail="Exercício não encontrado")
+        
+    return exercicio
+
+@app.put("/exercicios/{exercicio_id}")
+def update_exercicio(exercicio_id: int, dados: ExercicioUpdate, db: Session = Depends(get_db)):
+    exercicio = db.query(ExercicioDB).filter(ExercicioDB.id_exercicio == exercicio_id).first()
+    
+    if not exercicio:
+        raise HTTPException(status_code=404, detail="Exercício não encontrado")
+    
+    if dados.nome is not None:
+        exercicio.nome = dados.nome
+        
+    if dados.descricao is not None:
+        exercicio.descricao = dados.descricao
+        
+    if dados.video_url is not None:
+        exercicio.video_url = dados.video_url
+        
+    if dados.tipo is not None:
+        exercicio.tipo = dados.tipo
+        
+    if dados.dificuldade_padrao is not None:
+        exercicio.dificuldade_padrao = dados.dificuldade_padrao   
+        
+    db.commit()
+    db.refresh(exercicio)
+
+    return {"msg": "exercício alterado", "id_exercicio": exercicio_id}
+
+@app.delete("/exercicios/{exercicio_id}")
+def delete_exercicio(exercicio_id: int, db: Session = Depends(get_db)):
+    exercicio = db.query(ExercicioDB).filter(ExercicioDB.id_exercicio == exercicio_id).first()
+    
+    if not exercicio:
+        raise HTTPException(status_code=404, detail="Exercício não encontrado")
+    
+    db.query(ExercicioDB).filter(ExercicioDB.id_exercicio == exercicio_id).delete()
+    db.commit()
+    
+    return {"msg": "exercício deletado", "id_exercicio": exercicio_id}
+
+@app.post("/prescricoes/{prescricao_id}/exercicios")
+def criar_prescricao_exercicio(prescricao_id: int ,prescricaoExercicio: PrescricaoExercicioCreate, db: Session = Depends(get_db)):
+    
+    nova_prescricao_exercicio = PrescricaoExercicioDB(id_prescricao_fk=prescricao_id, id_exercicio_fk=prescricaoExercicio.id_exercicio, repeticoes=prescricaoExercicio.repeticoes,
+                                                      duracao_minutos=prescricaoExercicio.duracao_minutos, frequencia_semanal=prescricaoExercicio.frequencia_semanal,
+                                                      observacoes=prescricaoExercicio.observacoes)
+    # criando usuário
+    db.add(nova_prescricao_exercicio)
+    db.commit()
+    db.refresh(nova_prescricao_exercicio) 
+    
+    return {"msg": "prescricao_exercicio criado", "id_exercicio": prescricaoExercicio.id_exercicio, "id_prescricao": prescricao_id}
+
+@app.get("/prescricoes/{prescricao_id}/exercicios/{exercicio_id}")
+def ler_prescricao_exercicio(exercicio_id: int, prescricao_id: int, db: Session = Depends(get_db)):
+    prescricao_exercicio = db.query(PrescricaoExercicioDB).filter(and_(PrescricaoExercicioDB.id_exercicio_fk == exercicio_id,
+                                                                       PrescricaoExercicioDB.id_prescricao_fk == prescricao_id)).first()
+    
+    if not prescricao_exercicio:
+        raise HTTPException(status_code=404, detail="prescricao_exercicio não encontrado")
+        
+    return prescricao_exercicio
+
+@app.put("/prescricoes/{prescricao_id}/exercicios/{exercicio_id}")
+def update_prescricao_exercicio(exercicio_id: int, prescricao_id: int, dados: PrescricaoExercicioUpdate, db: Session = Depends(get_db)):
+    prescricao_exercicio = db.query(PrescricaoExercicioDB).filter(and_(PrescricaoExercicioDB.id_exercicio_fk == exercicio_id,
+                                                                       PrescricaoExercicioDB.id_prescricao_fk == prescricao_id)).first()
+    
+    if not prescricao_exercicio:
+        raise HTTPException(status_code=404, detail="prescricao_exercicio não encontrado")
+    
+    if dados.repeticoes is not None:
+        prescricao_exercicio.repeticoes = dados.repeticoes
+
+    if dados.duracao_minutos is not None:
+        prescricao_exercicio.duracao_minutos = dados.duracao_minutos
+    
+    if dados.frequencia_semanal is not None:
+        prescricao_exercicio.frequencia_semanal = dados.frequencia_semanal
+    
+    if dados.observacoes is not None:
+        prescricao_exercicio.observacoes = dados.observacoes
+        
+    db.commit()
+    db.refresh(prescricao_exercicio)
+
+    return {"msg": "prescricao_exercicio alterado", "id_prescricao": prescricao_id,"id_exercicio": exercicio_id}
+
+@app.delete("/prescricoes/{prescricao_id}/exercicios/{exercicio_id}")
+def delete_prescricao_exercicio(exercicio_id: int, prescricao_id: int, db: Session = Depends(get_db)):
+    prescricao_exercicio = db.query(PrescricaoExercicioDB).filter(and_(PrescricaoExercicioDB.id_exercicio_fk == exercicio_id,
+                                                                       PrescricaoExercicioDB.id_prescricao_fk == prescricao_id)).first()
+    
+    if not prescricao_exercicio:
+        raise HTTPException(status_code=404, detail="prescricao_exercicio não encontrado")
+    
+    db.query(PrescricaoExercicioDB).filter(and_(PrescricaoExercicioDB.id_exercicio_fk == exercicio_id, PrescricaoExercicioDB.id_prescricao_fk == prescricao_id)).delete()
+    db.commit()
+    
+    return {"msg": "prescricao_exercicio deletado", "id_prescricao": prescricao_id,"id_exercicio": exercicio_id}
     
 @app.post("/login")
 def login(dados: LoginRequest, db: Session = Depends(get_db)):
