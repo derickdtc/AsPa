@@ -277,7 +277,7 @@ class _HomepageState extends State<Homepage> {
           icon: Icons.directions_run,
           color: colorScheme.tertiary,
           onTap: () {
-            Modular.to.pushNamed('/game_jardineiro');
+            Modular.to.pushNamed('/game', arguments: widget.userId);
           },
         ),
         if (controller.exercicios.isNotEmpty) ...[
