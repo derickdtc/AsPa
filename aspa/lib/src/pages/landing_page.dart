@@ -116,7 +116,7 @@ class _LandingPageState extends State<LandingPage> {
                           child: Text(
                             'Login',
                             style: textTheme.titleSmall?.copyWith(
-                              fontSize: 35,
+                              fontSize: 27,
                               fontWeight: FontWeight.w300,
                               color: colorScheme.onPrimary,
                             ),

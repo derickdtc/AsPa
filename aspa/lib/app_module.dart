@@ -1,7 +1,9 @@
 import 'package:aspa/src/controllers/home_medico_controller.dart';
 import 'package:aspa/src/controllers/signup_controller.dart';
+import 'package:aspa/src/pages/chat_page.dart';
 import 'package:aspa/src/pages/exercise_history_page.dart';
 import 'package:aspa/src/pages/favorites_page.dart';
+import 'package:aspa/src/pages/friends_page.dart';
 import 'package:aspa/src/pages/game_selection_page.dart';
 import 'package:aspa/src/pages/help_page.dart';
 import 'package:aspa/src/pages/object_classification_game_page.dart';
@@ -67,6 +69,14 @@ class AppModule extends Module {
 
     r.child('/exercise_history',
         child: (context) => const ExerciseHistoryPage());
+    r.child('/friends',
+        child: (context) => FriendsPage(userId: r.args.data['userId']));
+    r.child('/chat',
+        child: (context) => ChatPage(
+              meuId: r.args.data['userId'],
+              amigoId: r.args.data['amigoId'],
+              nomeAmigo: r.args.data['nomeAmigo'],
+            ));
     r.child('/favorites', child: (context) => const FavoritesPage());
     r.child('/settings', child: (context) => const SettingsPage());
     r.child('/privacy_policy', child: (context) => const PrivacyPolicyPage());

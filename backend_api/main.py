@@ -1,10 +1,10 @@
-from fastapi import FastAPI, HTTPException, Depends
+from fastapi import FastAPI, HTTPException, Depends, WebSocket, WebSocketDisconnect
 from pydantic import BaseModel
-from sqlalchemy import create_engine, Column, Integer, String, Date, ForeignKey, DateTime, DOUBLE_PRECISION
+from sqlalchemy import create_engine, Column, Integer, String, Date, ForeignKey, DateTime, DOUBLE_PRECISION, or_
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session, relationship
 from passlib.context import CryptContext
-from typing import Optional
+from typing import Optional, List, Dict
 from datetime import date, datetime
 import os
 from dotenv import load_dotenv
@@ -83,6 +83,24 @@ class SessaoDB(Base):
     
     paciente = relationship("PacienteDB", back_populates="sessoes")
 
+class AmizadeDB(Base):
+    __tablename__ = "amizade"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    solicitante_id = Column(Integer, ForeignKey("usuario.id_usuario")) 
+    recebedor_id = Column(Integer, ForeignKey("usuario.id_usuario"))  
+    status = Column(String, default="pendente") 
+    data_criacao = Column(Date, default=date.today)
+
+# histórico de mensagens
+class MensagemDB(Base):
+    __tablename__ = "mensagem"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    remetente_id = Column(Integer, ForeignKey("usuario.id_usuario"))
+    destinatario_id = Column(Integer, ForeignKey("usuario.id_usuario"))
+    conteudo = Column(String) 
+    data_envio = Column(DateTime, default=datetime.now)
 # SCHEMAS
 
 # recebendo do Flutter para criar conta
@@ -142,6 +160,17 @@ class SessaoUpdate(BaseModel):
     dificuldade_info: Optional[str] = None
     comentario_paciente: Optional[str] = None
     
+class UsuarioBusca(BaseModel):
+    id: int
+    nome: str
+    email: str
+    foto: Optional[str] = None
+    
+class PedidoAmizadeResponse(BaseModel):
+    id: int
+    solicitante: UsuarioBusca
+    status: str
+
 # as rotas que o Flutter vai chamar
 app = FastAPI(title="API Parkinson App")
 origins = ["*"] 
@@ -161,6 +190,199 @@ def get_db():
         yield db
     finally:
         db.close()
+
+class ConnectionManager:
+    def __init__(self):
+        self.active_connections: Dict[int, WebSocket] = {}
+
+    async def connect(self, websocket: WebSocket, user_id: int):
+        await websocket.accept()
+        self.active_connections[user_id] = websocket
+        print(f"User {user_id} conectado.") # log para ver no terminal
+
+    def disconnect(self, user_id: int):
+        if user_id in self.active_connections:
+            del self.active_connections[user_id]
+            print(f"User {user_id} desconectado.")
+
+    async def send_personal_message(self, message: str, destinatario_id: int):
+        if destinatario_id in self.active_connections:
+            connection = self.active_connections[destinatario_id]
+            try:
+                await connection.send_text(message)
+            except Exception as e:
+                # se der erro ao enviar, remove ele da lista
+                print(f"Erro ao enviar para {destinatario_id}: {e}")
+                self.disconnect(destinatario_id)
+
+manager = ConnectionManager()
+
+
+import json
+
+@app.websocket("/ws/{user_id}")
+async def websocket_endpoint(websocket: WebSocket, user_id: int, db: Session = Depends(get_db)):
+    await manager.connect(websocket, user_id)
+    try:
+        while True:
+            # espera a mensagem chegar
+            data = await websocket.receive_text()
+            
+            try:
+                data_json = json.loads(data)
+                
+                destinatario_id = int(data_json['destinatario_id'])
+                conteudo_texto = data_json['mensagem']
+                
+                print(f"Recebido de {user_id} para {destinatario_id}: {conteudo_texto}") 
+
+                nova_msg = MensagemDB(
+                    remetente_id=user_id,
+                    destinatario_id=destinatario_id,
+                    conteudo=conteudo_texto,
+                    data_envio=datetime.now()
+                )
+                db.add(nova_msg)
+                db.commit() 
+                
+                msg_para_enviar = json.dumps({
+                    "remetente_id": user_id,
+                    "mensagem": conteudo_texto,
+                    "data": str(datetime.now())
+                })
+                
+                await manager.send_personal_message(msg_para_enviar, destinatario_id)
+            
+            except Exception as e:
+                print(f"ERRO NO PROCESSAMENTO DA MENSAGEM: {e}")
+                db.rollback()
+
+    except WebSocketDisconnect:
+        manager.disconnect(user_id)
+    except Exception as e:
+        print(f"Erro fatal no socket: {e}")
+        manager.disconnect(user_id)
+        
+        
+class MensagemResponse(BaseModel):
+    id: int
+    remetente_id: int
+    conteudo: str
+    data_envio: datetime
+    class Config:
+        from_attributes = True
+
+
+@app.get("/chat/{amigo_id}")
+def obter_historico(amigo_id: int, user_atual_id: int, db: Session = Depends(get_db)):
+    # Pega mensagens onde (Eu mandei p/ Ele) OU (Ele mandou p/ Mim)
+    historico = db.query(MensagemDB).filter(
+        ((MensagemDB.remetente_id == user_atual_id) & (MensagemDB.destinatario_id == amigo_id)) |
+        ((MensagemDB.remetente_id == amigo_id) & (MensagemDB.destinatario_id == user_atual_id))
+    ).order_by(MensagemDB.data_envio.asc()).all()
+    
+    return [{
+        "remetente_id": msg.remetente_id,
+        "mensagem": msg.conteudo,
+        "data": msg.data_envio
+    } for msg in historico]
+
+# busca pessoas (que não são é o atual usuario) para adicionar
+@app.get("/usuarios/buscar/{termo}")
+def buscar_usuarios(termo: str, user_id_logado: int, db: Session = Depends(get_db)):
+    # busca por nome ou email
+    usuarios = db.query(UsuarioDB).filter(
+        (UsuarioDB.email.ilike(f"%{termo}%") | UsuarioDB.nome.ilike(f"%{termo}%")),
+        UsuarioDB.id_usuario != user_id_logado
+    ).all()
+    
+    resultado = []
+    for u in usuarios:
+        resultado.append({
+            "id": u.id_usuario,
+            "nome": u.nome,
+            "email": u.email,
+            "foto": u.foto
+        })
+    return resultado
+
+@app.post("/amizade/solicitar")
+def solicitar_amizade(solicitante_id: int, recebedor_id: int, db: Session = Depends(get_db)):
+    # verifica se já existe pedido (aceito ou pendente)
+    existente = db.query(AmizadeDB).filter(
+        ((AmizadeDB.solicitante_id == solicitante_id) & (AmizadeDB.recebedor_id == recebedor_id)) |
+        ((AmizadeDB.solicitante_id == recebedor_id) & (AmizadeDB.recebedor_id == solicitante_id))
+    ).first()
+    
+    if existente:
+        raise HTTPException(status_code=400, detail="Já existe uma relação entre vocês")
+    
+    nova_amizade = AmizadeDB(
+        solicitante_id=solicitante_id,
+        recebedor_id=recebedor_id,
+        status="pendente"
+    )
+    db.add(nova_amizade)
+    db.commit()
+    return {"msg": "Solicitação enviada"}
+
+@app.get("/amizade/pendentes/{meu_id}")
+def listar_pendentes(meu_id: int, db: Session = Depends(get_db)):
+    # busca onde "EU" sou o receptor e status é pendente
+    pedidos = db.query(AmizadeDB).filter(
+        AmizadeDB.recebedor_id == meu_id,
+        AmizadeDB.status == "pendente"
+    ).all()
+    
+    # dados de quem enviou
+    resultado = []
+    for p in pedidos:
+        quem_pediu = db.query(UsuarioDB).filter(UsuarioDB.id_usuario == p.solicitante_id).first()
+        resultado.append({
+            "id_amizade": p.id,
+            "nome": quem_pediu.nome,
+            "email": quem_pediu.email,
+            "id_usuario": quem_pediu.id_usuario # ID de quem pediu
+        })
+    return resultado
+
+@app.put("/amizade/responder/{id_amizade}")
+def responder_amizade(id_amizade: int, aceitar: bool, db: Session = Depends(get_db)):
+    amizade = db.query(AmizadeDB).filter(AmizadeDB.id == id_amizade).first()
+    
+    if not amizade:
+        raise HTTPException(status_code=404, detail="Pedido não encontrado")
+    
+    if aceitar:
+        amizade.status = "aceito"
+        db.commit()
+        return {"msg": "Amizade aceita!"}
+    else:
+        db.delete(amizade) # se recusar, apaga o pedido
+        db.commit()
+        return {"msg": "Pedido recusado"}
+
+@app.get("/amizade/meus_amigos/{meu_id}")
+def listar_amigos(meu_id: int, db: Session = Depends(get_db)):
+    amizades = db.query(AmizadeDB).filter(
+        ((AmizadeDB.solicitante_id == meu_id) | (AmizadeDB.recebedor_id == meu_id)),
+        AmizadeDB.status == "aceito"
+    ).all()
+    
+    lista_amigos = []
+    for a in amizades:
+        id_amigo = a.recebedor_id if a.solicitante_id == meu_id else a.solicitante_id
+        
+        amigo = db.query(UsuarioDB).filter(UsuarioDB.id_usuario == id_amigo).first()
+        lista_amigos.append({
+            "id_usuario": amigo.id_usuario,
+            "nome": amigo.nome,
+            "email": amigo.email,
+            "foto": amigo.foto
+        })
+        
+    return lista_amigos
+
 
 # route pacientes
 @app.post("/pacientes/", response_model=PacienteResponse)
