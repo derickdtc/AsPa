@@ -9,6 +9,8 @@ class ApiService {
   // se usar Edge/Chrome use http://127.0.0.1:8000
   static const String baseUrl = "http://127.0.0.1:8000";
 
+  // static const String baseUrl = "http://192.168.3.126:8000";
+
   Future<Map<String, dynamic>?> login(String email, String senha) async {
     final url = Uri.parse('$baseUrl/login'); // chamando a nova rota
 
@@ -140,6 +142,20 @@ class ApiService {
     } catch (e) {
       // print("Erro de conexão: $e");
       return false;
+    }
+  }
+
+  Future<List<dynamic>> getHistoricoChat(int meuId, int amigoId) async {
+    final url = Uri.parse('$baseUrl/chat/$amigoId?user_atual_id=$meuId');
+
+    try {
+      final response = await http.get(url);
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body); // retornando lista de msgs antigas
+      }
+      return [];
+    } catch (e) {
+      return [];
     }
   }
 
@@ -339,6 +355,33 @@ class ApiService {
     }
   }
 
+
+  // busca usuários para adicionar (parte de amizade)
+  Future<List<dynamic>> buscarUsuarios(String termo, int meuId) async {
+    final url =
+        Uri.parse('$baseUrl/usuarios/buscar/$termo?user_id_logado=$meuId');
+    try {
+      final response = await http.get(url);
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      }
+      return [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  Future<bool> solicitarAmizade(int meuId, int idAmigo) async {
+    final url = Uri.parse(
+        '$baseUrl/amizade/solicitar?solicitante_id=$meuId&recebedor_id=$idAmigo');
+    try {
+      final response = await http.post(url);
+      return response.statusCode == 200;
+    } catch (e) {
+      return false;
+    }
+  }
+
   Future<Map<String, dynamic>?> cadastrarPrescricao(
     int idPacienteFk,
     String dataAtualizacao,
@@ -435,6 +478,30 @@ class ApiService {
       } else {
         return false;
       }
+
+    } catch (e) {
+      return false;
+    }
+  }
+
+
+  Future<List<dynamic>> getPedidosPendentes(int meuId) async {
+    final url = Uri.parse('$baseUrl/amizade/pendentes/$meuId');
+    try {
+      final response = await http.get(url);
+      if (response.statusCode == 200) return jsonDecode(response.body);
+      return [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  Future<bool> responderAmizade(int idAmizade, bool aceitar) async {
+    final url =
+        Uri.parse('$baseUrl/amizade/responder/$idAmizade?aceitar=$aceitar');
+    try {
+      final response = await http.put(url);
+      return response.statusCode == 200;
     } catch (e) {
       return false;
     }
@@ -548,8 +615,21 @@ class ApiService {
       } else {
         return false;
       }
+
     } catch (e) {
       return false;
+    }
+  }
+
+
+  Future<List<dynamic>> getMeusAmigos(int meuId) async {
+    final url = Uri.parse('$baseUrl/amizade/meus_amigos/$meuId');
+    try {
+      final response = await http.get(url);
+      if (response.statusCode == 200) return jsonDecode(response.body);
+      return [];
+    } catch (e) {
+      return [];
     }
   }
 
@@ -769,6 +849,7 @@ class ApiService {
       }
     } catch (e) {
       return false;
+
     }
   }
 }

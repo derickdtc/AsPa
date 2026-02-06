@@ -153,6 +153,13 @@ class ProfileController extends ChangeNotifier {
         icon: Icons.logout,
         route: '/login',
       ),
+      ProfileMenuItem(
+        id: 'friends',
+        label: 'Friends',
+        icon: Icons.person,
+        route: '/friends',
+        arguments: {'userId': userId},
+      ),
     ];
   }
 
