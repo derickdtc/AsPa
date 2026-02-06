@@ -552,4 +552,113 @@ class ApiService {
       return false;
     }
   }
+
+  Future<Map<String, dynamic>?> cadastrarExercicio(
+    String nome,
+    String descricao,
+    String videoUrl,
+    String tipo,
+    String dificuldadePadrao
+  ) async {
+    final url = Uri.parse('$baseUrl/exercicios/');
+
+    try {
+      final response = await http.post(
+        url,
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode(
+            {
+              "nome": nome,
+              "descricao": descricao,
+              "video_url": videoUrl,
+              "tipo": tipo,
+              "dificuldade_padrao": dificuldadePadrao
+            }),
+      );
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        // print("Erro de API: ${response.body}");
+        return null;
+      }
+    } catch (e) {
+      // print("Erro de conexão: $e");
+      return null;
+    }
+  }
+
+  Future<Map<String, dynamic>?> getExercicio(
+    int id
+  ) async {
+    final url = Uri.parse('$baseUrl/exercicios/$id');
+
+    try {
+      final response = await http.get(url);
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        return null;
+      }
+    } catch (e) {
+      // print("Erro ao buscar paciente: $e");
+      return null;
+    }
+  }
+
+  Future<Map<String, dynamic>?> updateExercicio(int id,
+      {
+        String? nome,
+        String? descricao,
+        String? videoUrl,
+        String? tipo,
+        String? dificuldadePadrao
+      }) async {
+    final url = Uri.parse('$baseUrl/exercicios/$id');
+
+    final Map<String, dynamic> corpo = {};
+
+    if (nome != null) corpo["nome"] = nome;
+    if (descricao != null) corpo["descricao"] = descricao;    
+    if (videoUrl != null) corpo["video_url"] = videoUrl;    
+    if (tipo != null) corpo["tipo"] = tipo;
+    if (dificuldadePadrao != null) corpo["dificuldade_padrao"] = dificuldadePadrao;     
+
+    try {
+      final response = await http.put(
+        url,
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode(corpo),
+      );
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        // print("Erro ao atualizar paciente: ${response.body}");
+        return null;
+      }
+    } catch (e) {
+      // print("Erro de conexão: $e");
+      return null;
+    }
+  }
+
+  Future<bool> deleteExercicio(
+    int id
+  ) async {
+    final url = Uri.parse('$baseUrl/exercicios/$id');
+
+    try {
+      final response = await http.delete(url);
+
+      if (response.statusCode == 200) {
+        return true;
+      } else {
+        return false;
+      }
+    } catch (e) {
+      return false;
+    }
+  }
 }
