@@ -355,7 +355,7 @@ class ApiService {
     }
   }
 
-<<<<<<< system_chat_friends
+
   // busca usuários para adicionar (parte de amizade)
   Future<List<dynamic>> buscarUsuarios(String termo, int meuId) async {
     final url =
@@ -377,7 +377,11 @@ class ApiService {
     try {
       final response = await http.post(url);
       return response.statusCode == 200;
-=======
+    } catch (e) {
+      return false;
+    }
+  }
+
   Future<Map<String, dynamic>?> cadastrarPrescricao(
     int idPacienteFk,
     String dataAtualizacao,
@@ -474,13 +478,13 @@ class ApiService {
       } else {
         return false;
       }
->>>>>>> main
+
     } catch (e) {
       return false;
     }
   }
 
-<<<<<<< system_chat_friends
+
   Future<List<dynamic>> getPedidosPendentes(int meuId) async {
     final url = Uri.parse('$baseUrl/amizade/pendentes/$meuId');
     try {
@@ -498,7 +502,11 @@ class ApiService {
     try {
       final response = await http.put(url);
       return response.statusCode == 200;
-=======
+    } catch (e) {
+      return false;
+    }
+  }
+
   Future<Map<String, dynamic>?> cadastrarLembrete(
     int idPrescricaoFk,
     String horario,
@@ -607,13 +615,13 @@ class ApiService {
       } else {
         return false;
       }
->>>>>>> main
+
     } catch (e) {
       return false;
     }
   }
 
-<<<<<<< system_chat_friends
+
   Future<List<dynamic>> getMeusAmigos(int meuId) async {
     final url = Uri.parse('$baseUrl/amizade/meus_amigos/$meuId');
     try {
@@ -622,7 +630,9 @@ class ApiService {
       return [];
     } catch (e) {
       return [];
-=======
+    }
+  }
+
   Future<Map<String, dynamic>?> cadastrarPrescricaoExercicio(
     int idPrescricaoFk,
     int idExercicioFk,
@@ -839,7 +849,7 @@ class ApiService {
       }
     } catch (e) {
       return false;
->>>>>>> main
+
     }
   }
 }
