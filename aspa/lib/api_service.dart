@@ -257,22 +257,20 @@ class ApiService {
       String dataHora,
       double duracaoRealizada,
       String dificuldadeInfo,
-      String comentarioPaciente
-    ) async {
+      String comentarioPaciente) async {
     final url = Uri.parse('$baseUrl/sessoes/');
 
     try {
       final response = await http.post(
         url,
         headers: {"Content-Type": "application/json"},
-        body: jsonEncode(
-            {
-              "id_paciente_fk": idPacienteFk,
-              "data_hora": dataHora, 
-              "duracao_realizada": duracaoRealizada,
-              "dificuldade_info": dificuldadeInfo,
-              "comentario_paciente": comentarioPaciente
-            }),
+        body: jsonEncode({
+          "id_paciente_fk": idPacienteFk,
+          "data_hora": dataHora,
+          "duracao_realizada": duracaoRealizada,
+          "dificuldade_info": dificuldadeInfo,
+          "comentario_paciente": comentarioPaciente
+        }),
       );
 
       if (response.statusCode == 200) {
@@ -355,7 +353,6 @@ class ApiService {
     }
   }
 
-
   // busca usuários para adicionar (parte de amizade)
   Future<List<dynamic>> buscarUsuarios(String termo, int meuId) async {
     final url =
@@ -382,40 +379,35 @@ class ApiService {
     }
   }
 
-  Future<Map<String, dynamic>?> cadastrarPrescricao(
-    int idPacienteFk,
-    String dataAtualizacao,
-    String observacoesGerais
-  ) async {
+  Future<int?> cadastrarPrescricao(
+      int idPaciente, int idMedico, String observacoesGerais) async {
     final url = Uri.parse('$baseUrl/prescricoes/');
 
     try {
       final response = await http.post(
         url,
         headers: {"Content-Type": "application/json"},
-        body: jsonEncode(
-            {
-              "id_paciente_fk": idPacienteFk,
-              "data_atualizacao": dataAtualizacao,
-              "observacoes_gerais": observacoesGerais,
-            }),
+        body: jsonEncode({
+          "id_paciente": idPaciente,
+          "id_medico": idMedico,
+          "data_atualizacao": DateTime.now().toIso8601String(),
+          "observacoes_gerais": observacoesGerais,
+        }),
       );
 
       if (response.statusCode == 200) {
-        return jsonDecode(response.body);
+        final data = jsonDecode(response.body);
+        return data['id_prescricao'];
       } else {
-        // print("Erro de API: ${response.body}");
+        // print("Erro API Prescrição: ${response.body}");
         return null;
       }
     } catch (e) {
-      // print("Erro de conexão: $e");
       return null;
     }
   }
 
-  Future<Map<String, dynamic>?> getPrescricao(
-    int id
-  ) async {
+  Future<Map<String, dynamic>?> getPrescricao(int id) async {
     final url = Uri.parse('$baseUrl/prescricoes/$id');
 
     try {
@@ -433,18 +425,18 @@ class ApiService {
   }
 
   Future<Map<String, dynamic>?> updatePrescricao(int id,
-      {
-        int? idPacienteFk,
-        String? dataAtualizacao,
-        String? observacoesGerais
-      }) async {
+      {int? idPacienteFk,
+      String? dataAtualizacao,
+      String? observacoesGerais}) async {
     final url = Uri.parse('$baseUrl/prescricoes/$id');
 
     final Map<String, dynamic> corpo = {};
 
     if (idPacienteFk != null) corpo["id_paciente_fk"] = idPacienteFk;
     if (dataAtualizacao != null) corpo["data_atualizacao"] = dataAtualizacao;
-    if (observacoesGerais != null) corpo["observacoes_gerais"] = observacoesGerais;
+    if (observacoesGerais != null) {
+      corpo["observacoes_gerais"] = observacoesGerais;
+    }
 
     try {
       final response = await http.put(
@@ -465,9 +457,7 @@ class ApiService {
     }
   }
 
-  Future<bool> deletePrescricao(
-    int id
-  ) async {
+  Future<bool> deletePrescricao(int id) async {
     final url = Uri.parse('$baseUrl/prescricoes/$id');
 
     try {
@@ -478,12 +468,10 @@ class ApiService {
       } else {
         return false;
       }
-
     } catch (e) {
       return false;
     }
   }
-
 
   Future<List<dynamic>> getPedidosPendentes(int meuId) async {
     final url = Uri.parse('$baseUrl/amizade/pendentes/$meuId');
@@ -508,45 +496,40 @@ class ApiService {
   }
 
   Future<Map<String, dynamic>?> cadastrarLembrete(
-    int idPrescricaoFk,
-    String horario,
-    String nomeMedicamento,
-    double doseDiaria,
-    String tipo,
-    String status
-  ) async {
+      int idPrescricao,
+      String horario,
+      String nomeMedicamento,
+      double doseDiaria,
+      String tipo,
+      String status) async {
     final url = Uri.parse('$baseUrl/lembretes/');
 
     try {
       final response = await http.post(
         url,
         headers: {"Content-Type": "application/json"},
-        body: jsonEncode(
-            {
-              "id_prescricao_fk": idPrescricaoFk,
-              "horario": horario,
-              "nome_medicamento": nomeMedicamento,
-              "dose_diaria": doseDiaria,
-              "tipo": tipo,
-              "status": status
-            }),
+        body: jsonEncode({
+          "id_prescricao": idPrescricao,
+          "horario": horario,
+          "nome_medicamento": nomeMedicamento,
+          "dose_diaria": doseDiaria,
+          "tipo": tipo,
+          "status": status
+        }),
       );
 
       if (response.statusCode == 200) {
         return jsonDecode(response.body);
       } else {
-        // print("Erro de API: ${response.body}");
+        // print("Erro API Lembrete: ${response.body}");
         return null;
       }
     } catch (e) {
-      // print("Erro de conexão: $e");
       return null;
     }
   }
 
-  Future<Map<String, dynamic>?> getLembrete(
-    int id
-  ) async {
+  Future<Map<String, dynamic>?> getLembrete(int id) async {
     final url = Uri.parse('$baseUrl/lembretes/$id');
 
     try {
@@ -564,24 +547,22 @@ class ApiService {
   }
 
   Future<Map<String, dynamic>?> updateLembrete(int id,
-      {
-        int? idPrescricaoFk,
-        String? horario,
-        String? nomeMedicamento,
-        double? doseDiaria,
-        String? tipo,
-        String? status
-      }) async {
+      {int? idPrescricaoFk,
+      String? horario,
+      String? nomeMedicamento,
+      double? doseDiaria,
+      String? tipo,
+      String? status}) async {
     final url = Uri.parse('$baseUrl/lembretes/$id');
 
     final Map<String, dynamic> corpo = {};
 
     if (idPrescricaoFk != null) corpo["id_prescricao_fk"] = idPrescricaoFk;
-    if (horario != null) corpo["horario"] = horario;    
+    if (horario != null) corpo["horario"] = horario;
     if (nomeMedicamento != null) corpo["nome_medicamento"] = nomeMedicamento;
     if (doseDiaria != null) corpo["dose_diaria"] = doseDiaria;
     if (tipo != null) corpo["tipo"] = tipo;
-    if (status != null) corpo["status"] = status;    
+    if (status != null) corpo["status"] = status;
 
     try {
       final response = await http.put(
@@ -602,9 +583,7 @@ class ApiService {
     }
   }
 
-  Future<bool> deleteLembrete(
-    int id
-  ) async {
+  Future<bool> deleteLembrete(int id) async {
     final url = Uri.parse('$baseUrl/lembretes/$id');
 
     try {
@@ -615,12 +594,10 @@ class ApiService {
       } else {
         return false;
       }
-
     } catch (e) {
       return false;
     }
   }
-
 
   Future<List<dynamic>> getMeusAmigos(int meuId) async {
     final url = Uri.parse('$baseUrl/amizade/meus_amigos/$meuId');
@@ -634,46 +611,43 @@ class ApiService {
   }
 
   Future<Map<String, dynamic>?> cadastrarPrescricaoExercicio(
-    int idPrescricaoFk,
-    int idExercicioFk,
-    int repeticoes,
-    int duracaoMinutos,
-    int frequenciaSemanal,
-    String observacoes
-  ) async {
-    final url = Uri.parse('$baseUrl/prescricoes/$idPrescricaoFk/exercicios');
+      int idPrescricao,
+      int idExercicio,
+      int repeticoes,
+      int duracaoMinutos,
+      int frequenciaSemanal,
+      String observacoes) async {
+    final url = Uri.parse('$baseUrl/prescricoes/$idPrescricao/exercicios');
 
     try {
       final response = await http.post(
         url,
         headers: {"Content-Type": "application/json"},
-        body: jsonEncode(
-            {
-              "id_prescricao_fk": idPrescricaoFk,
-              "id_exercicio_fk": idExercicioFk,
-              "repeticoes": repeticoes,
-              "duracao_minutos": duracaoMinutos,
-              "frequencia_semanal": frequenciaSemanal,
-              "observacoes": observacoes
-            }),
+        body: jsonEncode({
+          "id_prescricao": idPrescricao,
+          "id_exercicio": idExercicio,
+          "repeticoes": repeticoes,
+          "duracao_minutos": duracaoMinutos,
+          "frequencia_semanal": frequenciaSemanal,
+          "observacoes": observacoes
+        }),
       );
 
       if (response.statusCode == 200) {
         return jsonDecode(response.body);
       } else {
-        // print("Erro de API: ${response.body}");
+        // print("Erro API Exercício: ${response.body}");
         return null;
       }
     } catch (e) {
-      // print("Erro de conexão: $e");
       return null;
     }
   }
 
   Future<Map<String, dynamic>?> getPrescricaoExercicio(
-    int idPrescricao, int idExercicio
-  ) async {
-    final url = Uri.parse('$baseUrl/prescricoes/$idPrescricao/exercicios/$idExercicio');
+      int idPrescricao, int idExercicio) async {
+    final url =
+        Uri.parse('$baseUrl/prescricoes/$idPrescricao/exercicios/$idExercicio');
 
     try {
       final response = await http.get(url);
@@ -689,21 +663,23 @@ class ApiService {
     }
   }
 
-  Future<Map<String, dynamic>?> updatePrescricaoExercicio(int idPrescricao, int idExercicio,
-      {
-        int? repeticoes,
-        int? duracaoMinutos,
-        int? frequenciaSemanal,
-        String? observacoes
-      }) async {
-    final url = Uri.parse('$baseUrl/prescricoes/$idPrescricao/exercicios/$idExercicio');
+  Future<Map<String, dynamic>?> updatePrescricaoExercicio(
+      int idPrescricao, int idExercicio,
+      {int? repeticoes,
+      int? duracaoMinutos,
+      int? frequenciaSemanal,
+      String? observacoes}) async {
+    final url =
+        Uri.parse('$baseUrl/prescricoes/$idPrescricao/exercicios/$idExercicio');
 
     final Map<String, dynamic> corpo = {};
 
     if (repeticoes != null) corpo["repeticoes"] = repeticoes;
     if (duracaoMinutos != null) corpo["duracao_minutos"] = duracaoMinutos;
-    if (frequenciaSemanal != null) corpo["frequencia_semanal"] = frequenciaSemanal;
-    if (observacoes != null) corpo["observacoes"] = observacoes;  
+    if (frequenciaSemanal != null) {
+      corpo["frequencia_semanal"] = frequenciaSemanal;
+    }
+    if (observacoes != null) corpo["observacoes"] = observacoes;
 
     try {
       final response = await http.put(
@@ -725,10 +701,9 @@ class ApiService {
   }
 
   Future<bool> deletePrescricaoExercicio(
-    int idPrescricao,
-    int idExercicio
-  ) async {
-    final url = Uri.parse('$baseUrl/prescricoes/$idPrescricao/exercicios/$idExercicio');
+      int idPrescricao, int idExercicio) async {
+    final url =
+        Uri.parse('$baseUrl/prescricoes/$idPrescricao/exercicios/$idExercicio');
 
     try {
       final response = await http.delete(url);
@@ -744,26 +719,24 @@ class ApiService {
   }
 
   Future<Map<String, dynamic>?> cadastrarExercicio(
-    String nome,
-    String descricao,
-    String videoUrl,
-    String tipo,
-    String dificuldadePadrao
-  ) async {
+      String nome,
+      String descricao,
+      String videoUrl,
+      String tipo,
+      String dificuldadePadrao) async {
     final url = Uri.parse('$baseUrl/exercicios/');
 
     try {
       final response = await http.post(
         url,
         headers: {"Content-Type": "application/json"},
-        body: jsonEncode(
-            {
-              "nome": nome,
-              "descricao": descricao,
-              "video_url": videoUrl,
-              "tipo": tipo,
-              "dificuldade_padrao": dificuldadePadrao
-            }),
+        body: jsonEncode({
+          "nome": nome,
+          "descricao": descricao,
+          "video_url": videoUrl,
+          "tipo": tipo,
+          "dificuldade_padrao": dificuldadePadrao
+        }),
       );
 
       if (response.statusCode == 200) {
@@ -778,9 +751,7 @@ class ApiService {
     }
   }
 
-  Future<Map<String, dynamic>?> getExercicio(
-    int id
-  ) async {
+  Future<Map<String, dynamic>?> getExercicio(int id) async {
     final url = Uri.parse('$baseUrl/exercicios/$id');
 
     try {
@@ -798,22 +769,22 @@ class ApiService {
   }
 
   Future<Map<String, dynamic>?> updateExercicio(int id,
-      {
-        String? nome,
-        String? descricao,
-        String? videoUrl,
-        String? tipo,
-        String? dificuldadePadrao
-      }) async {
+      {String? nome,
+      String? descricao,
+      String? videoUrl,
+      String? tipo,
+      String? dificuldadePadrao}) async {
     final url = Uri.parse('$baseUrl/exercicios/$id');
 
     final Map<String, dynamic> corpo = {};
 
     if (nome != null) corpo["nome"] = nome;
-    if (descricao != null) corpo["descricao"] = descricao;    
-    if (videoUrl != null) corpo["video_url"] = videoUrl;    
+    if (descricao != null) corpo["descricao"] = descricao;
+    if (videoUrl != null) corpo["video_url"] = videoUrl;
     if (tipo != null) corpo["tipo"] = tipo;
-    if (dificuldadePadrao != null) corpo["dificuldade_padrao"] = dificuldadePadrao;     
+    if (dificuldadePadrao != null) {
+      corpo["dificuldade_padrao"] = dificuldadePadrao;
+    }
 
     try {
       final response = await http.put(
@@ -834,9 +805,7 @@ class ApiService {
     }
   }
 
-  Future<bool> deleteExercicio(
-    int id
-  ) async {
+  Future<bool> deleteExercicio(int id) async {
     final url = Uri.parse('$baseUrl/exercicios/$id');
 
     try {
@@ -849,7 +818,116 @@ class ApiService {
       }
     } catch (e) {
       return false;
+    }
+  }
 
+  Future<bool> vincularMedicoAoPaciente(int idMedico, int idPaciente) async {
+    final url =
+        Uri.parse('$baseUrl/pacientes/$idPaciente/vincular_medico/$idMedico');
+    try {
+      final response = await http.put(url);
+      return response.statusCode == 200;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  Future<List<dynamic>> getPacientesDoMedico(int idMedico) async {
+    final url = Uri.parse('$baseUrl/medicos/$idMedico/meus_pacientes');
+    try {
+      final response = await http.get(url);
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      }
+      return [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  Future<int?> criarPrescricaoBase(
+      int idPaciente, int idMedico, String obs) async {
+    final url = Uri.parse('$baseUrl/prescricoes/');
+    try {
+      final response = await http.post(
+        url,
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({
+          "id_paciente": idPaciente,
+          "id_medico": idMedico,
+          "data_atualizacao": DateTime.now().toIso8601String(),
+          "observacoes_gerais": obs
+        }),
+      );
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return data['id_prescricao'];
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  Future<bool> adicionarRemedio(
+      int idPrescricao, String nome, String dose, String horario) async {
+    final url = Uri.parse('$baseUrl/lembretes/');
+    try {
+      final response = await http.post(
+        url,
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({
+          "id_prescricao": idPrescricao,
+          "nome_medicamento": nome,
+          "dose_diaria": 1.0,
+          "horario": horario,
+          "tipo": "comprimido",
+          "status": "ativo"
+        }),
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  Future<List<dynamic>> getCatalogoExercicios() async {
+    final url = Uri.parse('$baseUrl/exercicios_catalogo/');
+    try {
+      final response = await http.get(url);
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      }
+      return [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  Future<List<dynamic>> getLembretesPaciente(int idPaciente) async {
+    final url = Uri.parse('$baseUrl/pacientes/$idPaciente/lembretes');
+    try {
+      final response = await http.get(url);
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      }
+      return [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  Future<List<dynamic>> getExerciciosPaciente(int idPaciente) async {
+    final url =
+        Uri.parse('$baseUrl/pacientes/$idPaciente/exercicios_prescritos');
+    try {
+      final response = await http.get(url);
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      }
+      return [];
+    } catch (e) {
+      return [];
     }
   }
 }

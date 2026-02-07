@@ -62,7 +62,6 @@ class ExercicioPaciente {
   final String descricao;
   final DateTime dataAtribuicao;
   final bool concluido;
-  final DateTime? dataConclusao;
   final int dificuldade;
 
   ExercicioPaciente({
@@ -71,23 +70,26 @@ class ExercicioPaciente {
     required this.descricao,
     required this.dataAtribuicao,
     this.concluido = false,
-    this.dataConclusao,
     this.dificuldade = 1,
   });
 
   factory ExercicioPaciente.fromJson(Map<String, dynamic> json) {
+    // Monta uma descrição com os dados da prescrição
+    String desc = json['descricao'] ?? '';
+    if (json['repeticoes'] != null) {
+      desc +=
+          "\nRepetições: ${json['repeticoes']} | ${json['duracao_minutos']} min";
+    }
+
     return ExercicioPaciente(
-      id: json['id'] ?? 0,
-      nome: json['nome'] ?? '',
-      descricao: json['descricao'] ?? '',
+      id: json['id_exercicio_prescrito'] ?? 0,
+      nome: json['nome'] ?? 'Exercício',
+      descricao: desc,
       dataAtribuicao: json['data_atribuicao'] != null
           ? DateTime.tryParse(json['data_atribuicao']) ?? DateTime.now()
           : DateTime.now(),
-      concluido: json['concluido'] ?? false,
-      dataConclusao: json['data_conclusao'] != null
-          ? DateTime.tryParse(json['data_conclusao'])
-          : null,
-      dificuldade: json['dificuldade'] ?? 1,
+      concluido: false, // Controle local por enquanto
+      dificuldade: 1, // Se o banco tiver dificuldade, mapeie aqui
     );
   }
 }
@@ -98,7 +100,6 @@ class LembretePaciente {
   final String descricao;
   final DateTime dataHora;
   final bool ativo;
-  final bool recorrente;
 
   LembretePaciente({
     required this.id,
@@ -106,22 +107,38 @@ class LembretePaciente {
     required this.descricao,
     required this.dataHora,
     this.ativo = true,
-    this.recorrente = false,
   });
 
   factory LembretePaciente.fromJson(Map<String, dynamic> json) {
+    // TRUQUE: O banco manda horário como String "08:00:00".
+    // Precisamos juntar com a data de HOJE para o App entender.
+    DateTime dataHoje = DateTime.now();
+    DateTime dataFinal = DateTime.now();
+
+    if (json['horario'] != null) {
+      final parts = json['horario'].toString().split(':');
+      if (parts.length >= 2) {
+        dataFinal = DateTime(
+          dataHoje.year,
+          dataHoje.month,
+          dataHoje.day,
+          int.parse(parts[0]), // Hora
+          int.parse(parts[1]), // Minuto
+        );
+      }
+    }
+
     return LembretePaciente(
-      id: json['id'] ?? 0,
-      titulo: json['titulo'] ?? '',
-      descricao: json['descricao'] ?? '',
-      dataHora: json['data_hora'] != null
-          ? DateTime.tryParse(json['data_hora']) ?? DateTime.now()
-          : DateTime.now(),
-      ativo: json['ativo'] ?? true,
-      recorrente: json['recorrente'] ?? false,
+      id: json['id_lembrete'] ?? 0,
+      // Mapeia 'nome_medicamento' do banco para 'titulo' da tela
+      titulo: json['nome_medicamento'] ?? 'Medicamento',
+      descricao: "${json['dose_diaria'] ?? ''} - ${json['tipo'] ?? ''}",
+      dataHora: dataFinal,
+      ativo: json['status'] == 'ativo',
     );
   }
 }
+// ... Mantenha o resto (PacienteModel, PacienteHomeState) igual ...
 
 class PacienteHomeState {
   PacienteModel? paciente;

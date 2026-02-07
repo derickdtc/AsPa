@@ -25,9 +25,10 @@ class HomeMedicoController extends ChangeNotifier {
         final medico = MedicoModel.fromJson(dados);
         _updateState(
           medico: medico,
-          pacientes: mockPacientes, // Substituir por API quando disponível
           isLoading: false,
         );
+
+        await carregarPacientes(userId);
       } else {
         _updateState(
           errorMessage: 'Erro ao carregar dados do médico',
@@ -44,16 +45,19 @@ class HomeMedicoController extends ChangeNotifier {
 
   Future<void> carregarPacientes(int medicoId) async {
     try {
-      // TODO: Implementar API para buscar pacientes do médico
-      // final pacientesData = await _api.getPacientesDoMedico(medicoId);
-      // final pacientes = pacientesData.map((p) => PacienteListadoModel.fromJson(p)).toList();
-      // _updateState(pacientes: pacientes);
+      // CHAMA A API
+      final listaDePacientes = await _api.getPacientesDoMedico(medicoId);
 
-      // Por enquanto, usando mock data
-      await Future.delayed(const Duration(milliseconds: 500));
-      _updateState(pacientes: mockPacientes);
+      // converte a lista para o model
+      final listaReal = listaDePacientes.map((item) {
+        return PacienteListadoModel.fromJson(item);
+      }).toList();
+
+      // atualiza a tela com os dados reais agr
+      _updateState(pacientes: listaReal);
     } catch (e) {
-      _updateState(errorMessage: 'Erro ao carregar pacientes');
+      // se der erro, deixa a lista vazia em vez de crashar
+      _updateState(pacientes: []);
     }
   }
 
@@ -73,7 +77,7 @@ class HomeMedicoController extends ChangeNotifier {
 
   void navegarParaPerfilPaciente(
       PacienteListadoModel paciente, BuildContext context) {
-    // TODO: Implementar navegação para tela do paciente
+    // TODO: Implementar navegação para tela do paciente corretamente
     // Modular.to.pushNamed('/paciente/${paciente.id}');
   }
 
