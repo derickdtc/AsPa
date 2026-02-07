@@ -529,6 +529,18 @@ class ApiService {
     }
   }
 
+  Future<bool> marcarExercicioComoFeito(
+      int idPrescricao, int idExercicio) async {
+    final url = Uri.parse(
+        '$baseUrl/prescricoes/$idPrescricao/exercicios/$idExercicio/concluir');
+    try {
+      final response = await http.put(url);
+      return response.statusCode == 200;
+    } catch (e) {
+      return false;
+    }
+  }
+
   Future<Map<String, dynamic>?> getLembrete(int id) async {
     final url = Uri.parse('$baseUrl/lembretes/$id');
 

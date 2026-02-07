@@ -15,7 +15,8 @@ class HomeController extends ChangeNotifier {
   List<ExercicioPaciente> get exercicios => _state.exercicios;
   List<LembretePaciente> get lembretes => _state.lembretes;
   int get streak => paciente?.sequenciaDias ?? 0;
-
+  List<ExercicioPaciente> get exerciciosPendentes =>
+      exercicios.where((e) => !e.concluido).toList();
   String get mensagemExercicios {
     if (exercicios.isEmpty) {
       return 'Nenhum exercício para hoje';
@@ -69,61 +70,44 @@ class HomeController extends ChangeNotifier {
     }
   }
 
-  Future<void> _carregarPrescricaoEDependentes(int pacienteId) async {
-    try {
-      // Primeiro, precisamos buscar a prescrição do paciente
-      // Como não temos um endpoint direto, vamos tentar buscar por ID ou listar
-      // Vou assumir que temos o ID da prescrição ou podemos buscar a última
+  Future<void> excluirLembrete(int idLembrete) async {
+    final sucesso = await _api.deleteLembrete(idLembrete);
 
-      // Para simplificar, vamos criar um endpoint no backend se não existir
-      // Por enquanto, vamos buscar a prescrição mais recente
-      await _buscarPrescricaoMaisRecente(pacienteId);
-    } catch (e) {
-      print("Erro ao carregar prescrição: $e");
-      _updateState(isLoading: false);
+    if (sucesso) {
+      final novaLista = lembretes.where((l) => l.id != idLembrete).toList();
+      _updateState(lembretes: novaLista);
+    } else {
+      _updateState(errorMessage: "Erro ao excluir lembrete.");
     }
   }
 
-  Future<void> _buscarPrescricaoMaisRecente(int pacienteId) async {
-    try {
-      // Esta é uma solução temporária - você precisará criar um endpoint no backend
-      // para buscar a prescrição do paciente
+  Future<void> marcarExercicioConcluido(
+      int idPrescricao, int idExercicio) async {
+    final sucesso =
+        await _api.marcarExercicioComoFeito(idPrescricao, idExercicio);
 
-      // Por enquanto, vou mostrar como seria se tivéssemos os endpoints:
-      // 1. Buscar prescrição do paciente
-      // 2. Buscar exercícios da prescrição
-      // 3. Buscar lembretes da prescrição
+    if (sucesso) {
+      final index = exercicios.indexWhere((e) =>
+          e.idPrescricao == idPrescricao && e.idExercicio == idExercicio);
 
-      // Para exercícios, vamos usar dados mock por enquanto
-      // Você precisa implementar endpoints específicos no backend
+      if (index != -1) {
+        final exAntigo = exercicios[index];
+        final exAtualizado = ExercicioPaciente(
+            idPrescricao: exAntigo.idPrescricao,
+            idExercicio: exAntigo.idExercicio,
+            nome: exAntigo.nome,
+            descricao: exAntigo.descricao,
+            dataAtribuicao: exAntigo.dataAtribuicao,
+            concluido: true,
+            dificuldade: exAntigo.dificuldade);
 
-      _updateState(isLoading: false);
-    } catch (e) {
-      print("Erro ao buscar prescrição: $e");
-      _updateState(isLoading: false);
-    }
-  }
+        final novaLista = List<ExercicioPaciente>.from(exercicios);
+        novaLista[index] = exAtualizado;
 
-  Future<void> marcarExercicioConcluido(int exercicioId) async {
-    final exercicioIndex = exercicios.indexWhere((e) => e.id == exercicioId);
-    if (exercicioIndex != -1) {
-      final exercicio = exercicios[exercicioIndex];
-      final exercicioAtualizado = ExercicioPaciente(
-        id: exercicio.id,
-        nome: exercicio.nome,
-        descricao: exercicio.descricao,
-        dataAtribuicao: exercicio.dataAtribuicao,
-        concluido: true,
-        dificuldade: exercicio.dificuldade,
-      );
-
-      final novaLista = List<ExercicioPaciente>.from(exercicios);
-      novaLista[exercicioIndex] = exercicioAtualizado;
-
-      _updateState(exercicios: novaLista);
-
-      // Aqui você pode chamar a API para atualizar no backend
-      // await _api.marcarExercicioConcluido(exercicioId, widget.userId);
+        _updateState(exercicios: novaLista);
+      }
+    } else {
+      _updateState(errorMessage: "Erro ao concluir exercício");
     }
   }
 

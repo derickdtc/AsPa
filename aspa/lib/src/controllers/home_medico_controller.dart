@@ -62,7 +62,6 @@ class HomeMedicoController extends ChangeNotifier {
   }
 
   Future<void> adicionarPaciente(String nomePaciente) async {
-    // TODO: Implementar lógica para adicionar paciente
     final novoPaciente = PacienteListadoModel(
       id: pacientes.length + 1,
       nome: nomePaciente,

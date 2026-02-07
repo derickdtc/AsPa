@@ -1,179 +1,144 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import '../controllers/home_paciente_controller.dart';
+import '../models/home_paciente_model.dart';
 
-class RemindersPage extends StatelessWidget {//falta ajustar tamanho e posicionamento dos botões, cor dos bloquinhos
-  const RemindersPage({super.key});
+class LembretesPage extends StatefulWidget {
+  final int userId;
+  const LembretesPage({super.key, required this.userId});
+
+  @override
+  State<LembretesPage> createState() => _LembretesPageState();
+}
+
+class _LembretesPageState extends State<LembretesPage> {
+  final HomeController controller = HomeController();
+
+  @override
+  void initState() {
+    super.initState();
+    controller.carregarDadosPaciente(widget.userId);
+  }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    return GestureDetector(
-      onTap: () => FocusScope.of(context).unfocus(),
-      child: Scaffold(
-        backgroundColor: colorScheme.surface,
-        body: SafeArea(
-          child: Column(
-            children: [
-              Padding(
-                padding: 
-                  const EdgeInsets.symmetric(vertical: 10),
-              ),
-              Row(
-                children: [
-                  Padding(
-                      padding:
-                          const EdgeInsetsDirectional.fromSTEB(29, 0, 0, 0),
-                      child: InkWell(
-                        onTap: () => Navigator.of(context).pop(),
-                        borderRadius: BorderRadius.circular(20),
-                        child: Icon(
-                          Icons.arrow_back_ios_new_rounded,
-                          color: colorScheme.primary,
-                          size: 28,
-                        ),
-                      ),
-                    ),
-                  Expanded(
-                    child: Center(
-                      child: Padding(
-                        padding: const EdgeInsets.only(right: 20),
-                        child: Text(
-                          'Lembretes',
-                          style: GoogleFonts.poppins(
-                            fontSize: 24,
-                            fontWeight: FontWeight.w600,
-                            color: colorScheme.primary,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+    return Scaffold(
+      appBar: AppBar(title: const Text("Meus Lembretes")),
+      body: ListenableBuilder(
+        listenable: controller,
+        builder: (context, child) {
+          if (controller.isLoading) {
+            return const Center(child: CircularProgressIndicator());
+          }
 
-              const SizedBox(height: 36),
+          if (controller.lembretes.isEmpty) {
+            return Center(
+                child: Text("Nenhum lembrete ativo.",
+                    style: theme.textTheme.bodyLarge));
+          }
 
-              _sectionHeader(context, 'Medicações'),
-
-              const SizedBox(height: 10),
-
-              _reminderCard(
-                context,
-                title: '18:00 - Paracetamol',
-                subtitle: '1 comprimido',
-                onTap: () {}
-              ),
-
-              const SizedBox(height: 18),
-
-              // EXERCÍCIOS
-              _sectionHeader(context, 'Exercícios'),
-
-              const SizedBox(height: 10),
-
-              _reminderCard(
-                context,
-                title: '10:00 - movimento de pinça',
-                subtitle: '10 repetições',
-                onTap: () {},
-              ),
-            ],
-          ),
-        ),
+          return ListView.builder(
+            padding: const EdgeInsets.all(16),
+            itemCount: controller.lembretes.length,
+            itemBuilder: (context, index) {
+              final lembrete = controller.lembretes[index];
+              return _buildLembreteItem(context, lembrete, colorScheme);
+            },
+          );
+        },
       ),
     );
   }
 
-
-  Widget _sectionHeader(
-    BuildContext context,
-    String title
-  ) {
+  Widget _buildLembreteItem(BuildContext context, LembretePaciente lembrete,
+      ColorScheme colorScheme) {
     final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 30),
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+          color: colorScheme.surfaceContainerLow,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: colorScheme.outline.withValues(alpha: 0.1)),
+          boxShadow: [
+            BoxShadow(
+                color: Colors.black12, blurRadius: 4, offset: Offset(0, 2))
+          ]),
       child: Row(
         children: [
-          Expanded(
-            child: Text(
-              title,
-              style: GoogleFonts.leagueSpartan(
-                fontSize: 24,
-                fontWeight: FontWeight.w500,
-              ),
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+                color: lembrete.ativo
+                    ? colorScheme.secondary.withValues(alpha: 0.1)
+                    : Colors.grey[200],
+                shape: BoxShape.circle),
+            child: Icon(
+              Icons.medication,
+              color: lembrete.ativo ? colorScheme.secondary : Colors.grey,
+              size: 28,
             ),
           ),
-          Padding(
-                      padding:
-                          const EdgeInsetsDirectional.fromSTEB(29, 0, 0, 0),
-                      child: InkWell(
-                        onTap: () {},
-                        borderRadius: BorderRadius.circular(20),
-                        child: Icon(
-                          Icons.add,
-                          color: colorScheme.primary,
-                          size: 28,
-                        ),
-                      ),
-                    ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  lembrete.titulo,
+                  style: theme.textTheme.titleMedium
+                      ?.copyWith(fontWeight: FontWeight.bold),
+                ),
+                Text(
+                  lembrete.descricao,
+                  style: theme.textTheme.bodyMedium
+                      ?.copyWith(color: colorScheme.onSurfaceVariant),
+                ),
+              ],
+            ),
+          ),
+          Column(
+            children: [
+              Text(
+                '${lembrete.dataHora.hour.toString().padLeft(2, '0')}:${lembrete.dataHora.minute.toString().padLeft(2, '0')}',
+                style: theme.textTheme.titleLarge?.copyWith(
+                    color: colorScheme.primary, fontWeight: FontWeight.bold),
+              ),
+              IconButton(
+                icon: const Icon(Icons.delete_outline, color: Colors.red),
+                onPressed: () => _confirmarExclusao(context, lembrete.id),
+              )
+            ],
+          ),
         ],
       ),
     );
   }
 
-    Widget _reminderCard(
-    BuildContext context, {
-    required String title,
-    required String subtitle,
-    required VoidCallback onTap,
-  }) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-
-  return Padding(
-    padding: const EdgeInsets.symmetric(horizontal: 30),
-    child: Material(
-      color: colorScheme.primary,
-      borderRadius: BorderRadius.circular(24),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(24),
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: 20,
-            vertical: 10,
+  void _confirmarExclusao(BuildContext context, int id) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text("Excluir Lembrete"),
+        content: const Text(
+            "Tem certeza que deseja apagar este medicamento da sua lista?"),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text("Cancelar"),
           ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Text(
-                title,
-                textAlign: TextAlign.center,
-                style: GoogleFonts.nunito(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                subtitle,
-                textAlign: TextAlign.center,
-                style: GoogleFonts.nunito(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w400,
-                ),
-              ),
-            ],
+          TextButton(
+            onPressed: () {
+              Navigator.pop(ctx); // fech o dialog
+              controller.excluirLembrete(id); // chama a exclusão
+            },
+            child: const Text("Excluir", style: TextStyle(color: Colors.red)),
           ),
-        ),
+        ],
       ),
-    ),
-  );
-
+    );
   }
 }

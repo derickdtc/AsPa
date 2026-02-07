@@ -133,7 +133,7 @@ class PrescricaoExercicioDB(Base):
     duracao_minutos = Column(Integer)
     frequencia_semanal = Column(Integer)
     observacoes = Column(String(300))
-    
+    ultima_execucao = Column(Date, nullable=True)
     id_prescricao_fk = Column("id_prescricao_fk",Integer, ForeignKey("prescricao.id_prescricao"), primary_key=True)
     id_exercicio_fk = Column("id_exercicio_fk",Integer, ForeignKey("exercicio.id_exercicio"), primary_key=True)    
     
@@ -1119,7 +1119,6 @@ def listar_todos_lembretes_paciente(id_paciente: int, db: Session = Depends(get_
 
 @app.get("/pacientes/{id_paciente}/exercicios_prescritos")
 def listar_exercicios_paciente(id_paciente: int, db: Session = Depends(get_db)):
-
     resultados = db.query(PrescricaoExercicioDB, ExercicioDB).join(
         ExercicioDB, PrescricaoExercicioDB.id_exercicio_fk == ExercicioDB.id_exercicio
     ).join(
@@ -1129,18 +1128,43 @@ def listar_exercicios_paciente(id_paciente: int, db: Session = Depends(get_db)):
     ).all()
     
     lista_formatada = []
+    hoje = date.today()
+
     for presc_ex, exercicio_info in resultados:
+
+        ja_fez_hoje = False
+        if presc_ex.ultima_execucao == hoje:
+            ja_fez_hoje = True
+
         lista_formatada.append({
-            "id_exercicio_prescrito": presc_ex.id_exercicio_fk,
+            "id_prescricao": presc_ex.id_prescricao_fk, 
+            "id_exercicio": presc_ex.id_exercicio_fk,   
             "nome": exercicio_info.nome,
             "descricao": exercicio_info.descricao,
             "repeticoes": presc_ex.repeticoes,
             "duracao_minutos": presc_ex.duracao_minutos,
             "frequencia": presc_ex.frequencia_semanal,
-            "data_atribuicao": str(presc_ex.prescricao.data_atualizacao) 
+            "data_atribuicao": str(presc_ex.prescricao.data_atualizacao),
+            "concluido_hoje": ja_fez_hoje 
         })
         
     return lista_formatada
+
+@app.put("/prescricoes/{id_prescricao}/exercicios/{id_exercicio}/concluir")
+def concluir_exercicio_hoje(id_prescricao: int, id_exercicio: int, db: Session = Depends(get_db)):
+    exercicio_prescrito = db.query(PrescricaoExercicioDB).filter(and_(
+        PrescricaoExercicioDB.id_prescricao_fk == id_prescricao,
+        PrescricaoExercicioDB.id_exercicio_fk == id_exercicio
+    )).first()
+    
+    if not exercicio_prescrito:
+        raise HTTPException(status_code=404, detail="Exercício prescrito não encontrado")
+    
+    exercicio_prescrito.ultima_execucao = date.today()
+    db.commit()
+    
+    return {"msg": "Exercício concluído hoje!"}
+
 # teste
 @app.get("/")
 def health_check():
