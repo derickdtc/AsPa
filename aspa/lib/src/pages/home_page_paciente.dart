@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_modular/flutter_modular.dart';
 import '../controllers/home_paciente_controller.dart';
-import '../models/home_paciente_model.dart';
 
 class Homepage extends StatefulWidget {
   final int userId;
@@ -64,9 +63,55 @@ class _HomepageState extends State<Homepage> {
                     const SizedBox(height: 20),
                     _buildStreakCard(context, colorScheme),
                     const SizedBox(height: 30),
-                    _buildExerciciosSection(context, colorScheme),
+                    _buildSectionHeader(
+                        context, 'Exercícios', controller.mensagemExercicios),
                     const SizedBox(height: 20),
-                    _buildLembretesSection(context, colorScheme),
+                    _buildActionCard(
+                      context,
+                      label: 'Ver Exercícios',
+                      icon: Icons.directions_run,
+                      color: colorScheme.tertiary,
+                      onTap: () {
+                        Modular.to
+                            .pushNamed('/exercicios_list',
+                                arguments: widget.userId)
+                            .then((_) => controller
+                                .carregarDadosPaciente(widget.userId));
+                      },
+                    ),
+                    const SizedBox(height: 30),
+                    _buildSectionHeader(
+                        context, 'Lembretes', controller.mensagemLembretes),
+                    const SizedBox(height: 20),
+                    _buildActionCard(
+                      context,
+                      label: 'Ver Lembretes',
+                      icon: Icons.alarm_on_rounded,
+                      color: colorScheme.secondary,
+                      onTap: () {
+                        Modular.to
+                            .pushNamed('/lembretes_list',
+                                arguments: widget.userId)
+                            .then((_) => controller
+                                .carregarDadosPaciente(widget.userId));
+                      },
+                    ),
+                    const SizedBox(height: 30),
+                    _buildSectionHeader(
+                        context, 'Jogos', "Treinamento Cognitivo"),
+                    const SizedBox(height: 20),
+                    _buildActionCard(
+                      context,
+                      label: 'Ver Jogos',
+                      icon: Icons.gamepad,
+                      color: colorScheme.tertiary,
+                      onTap: () {
+                        Modular.to
+                            .pushNamed('/game', arguments: widget.userId)
+                            .then((_) => controller
+                                .carregarDadosPaciente(widget.userId));
+                      },
+                    ),
                     const SizedBox(height: 40),
                   ],
                 ),
@@ -75,6 +120,31 @@ class _HomepageState extends State<Homepage> {
           ),
         );
       },
+    );
+  }
+
+  Widget _buildSectionHeader(
+      BuildContext context, String title, String subtitle) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                fontWeight: FontWeight.w800,
+                fontSize: 28,
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          subtitle,
+          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                fontSize: 16,
+                color: Theme.of(context).colorScheme.secondary,
+              ),
+        ),
+      ],
     );
   }
 
@@ -249,191 +319,6 @@ class _HomepageState extends State<Homepage> {
     );
   }
 
-  Widget _buildExerciciosSection(
-      BuildContext context, ColorScheme colorScheme) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Exercícios',
-          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.w800,
-                fontSize: 28,
-                color: colorScheme.onSurface,
-              ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          controller.mensagemExercicios,
-          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                fontSize: 16,
-                color: colorScheme.secondary,
-              ),
-        ),
-        const SizedBox(height: 20),
-        _buildActionCard(
-          context,
-          label: 'Ver Exercícios',
-          icon: Icons.directions_run,
-          color: colorScheme.tertiary,
-          onTap: () {
-            Modular.to.pushNamed('/game', arguments: widget.userId);
-          },
-        ),
-        if (controller.exercicios.isNotEmpty) ...[
-          const SizedBox(height: 16),
-          ...controller.exercicios.map((exercicio) =>
-              _buildExercicioItem(context, exercicio, colorScheme)),
-        ],
-      ],
-    );
-  }
-
-  Widget _buildLembretesSection(BuildContext context, ColorScheme colorScheme) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const SizedBox(height: 20),
-        Text(
-          'Lembretes',
-          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.w800,
-                fontSize: 28,
-                color: colorScheme.onSurface,
-              ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          controller.mensagemLembretes,
-          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                fontSize: 16,
-                color: colorScheme.secondary,
-              ),
-        ),
-        const SizedBox(height: 20),
-        _buildActionCard(
-          context,
-          label: 'Ver Lembretes',
-          icon: Icons.alarm_on_rounded,
-          color: colorScheme.secondary,
-          onTap: () {
-            Modular.to.pushNamed('/reminders');
-          },
-        ),
-        if (controller.lembretes.isNotEmpty) ...[
-          const SizedBox(height: 16),
-          ...controller.lembretes.map(
-              (lembrete) => _buildLembreteItem(context, lembrete, colorScheme)),
-        ],
-      ],
-    );
-  }
-
-  Widget _buildExercicioItem(BuildContext context, ExercicioPaciente exercicio,
-      ColorScheme colorScheme) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: colorScheme.outline.withValues(alpha: 0.1),
-        ),
-      ),
-      child: Row(
-        children: [
-          Icon(
-            exercicio.concluido ? Icons.check_circle : Icons.circle_outlined,
-            color: exercicio.concluido ? Colors.green : colorScheme.secondary,
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  exercicio.nome,
-                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        fontWeight: FontWeight.w500,
-                      ),
-                ),
-                if (exercicio.descricao.isNotEmpty)
-                  Text(
-                    exercicio.descricao,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: colorScheme.onSurfaceVariant,
-                        ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-              ],
-            ),
-          ),
-          if (!exercicio.concluido)
-            IconButton(
-              onPressed: () =>
-                  controller.marcarExercicioConcluido(exercicio.id),
-              icon: const Icon(Icons.play_arrow),
-              color: colorScheme.primary,
-            ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildLembreteItem(BuildContext context, LembretePaciente lembrete,
-      ColorScheme colorScheme) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: colorScheme.outline.withValues(alpha: 0.1),
-        ),
-      ),
-      child: Row(
-        children: [
-          Icon(
-            Icons.notifications,
-            color: lembrete.ativo
-                ? colorScheme.secondary
-                : colorScheme.onSurfaceVariant,
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  lembrete.titulo,
-                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        fontWeight: FontWeight.w500,
-                      ),
-                ),
-                Text(
-                  '${lembrete.dataHora.hour.toString().padLeft(2, '0')}:${lembrete.dataHora.minute.toString().padLeft(2, '0')}',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: colorScheme.secondary,
-                      ),
-                ),
-              ],
-            ),
-          ),
-          Switch(
-            value: lembrete.ativo,
-            onChanged: (value) {
-              // TODO: Implementar toggle de ativo
-            },
-            activeThumbColor: colorScheme.secondary,
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildActionCard(
     BuildContext context, {
     required String label,
@@ -446,7 +331,7 @@ class _HomepageState extends State<Homepage> {
       borderRadius: BorderRadius.circular(12),
       child: Container(
         width: double.infinity,
-        height: 60,
+        height: 80,
         padding: const EdgeInsets.symmetric(horizontal: 20),
         decoration: BoxDecoration(
           color: color,
@@ -464,7 +349,13 @@ class _HomepageState extends State<Homepage> {
           children: [
             Row(
               children: [
-                Icon(icon, color: Colors.white, size: 28),
+                Container(
+                  padding: EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.2),
+                      shape: BoxShape.circle),
+                  child: Icon(icon, color: Colors.white, size: 28),
+                ),
                 const SizedBox(width: 16),
                 Text(
                   label,

@@ -2,6 +2,7 @@ import 'package:aspa/src/controllers/home_medico_controller.dart';
 import 'package:aspa/src/controllers/signup_controller.dart';
 import 'package:aspa/src/pages/chat_page.dart';
 import 'package:aspa/src/pages/exercise_history_page.dart';
+import 'package:aspa/src/pages/exercises_page.dart';
 import 'package:aspa/src/pages/favorites_page.dart';
 import 'package:aspa/src/pages/friends_page.dart';
 import 'package:aspa/src/pages/game_selection_page.dart';
@@ -58,7 +59,10 @@ class AppModule extends Module {
             userId: r.args.data['id'], isMedico: r.args.data['isMedico']));
     r.child('/edit_profile', child: (context) => const EditProfilePage());
 
-    r.child('/reminders', child: (context) => const RemindersPage());
+    r.child('/exercicios_list',
+        child: (context) => ExerciciosPage(userId: r.args.data));
+    r.child('/lembretes_list',
+        child: (context) => LembretesPage(userId: r.args.data));
     r.child('/game_jardineiro',
         child: (context) => JardineiroGamePage(userId: r.args.data));
     r.child('/game_tracing',
