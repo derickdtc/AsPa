@@ -1,3 +1,5 @@
+import 'package:aspa/src/pages/prescricao_page.dart';
+import 'package:aspa/src/pages/search_patient_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_modular/flutter_modular.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -198,7 +200,10 @@ class _HomePageMedicoState extends State<HomePageMedico> {
   Widget _buildAddPacienteButton(
       BuildContext context, ColorScheme colorScheme) {
     return InkWell(
-      onTap: () => _mostrarDialogoAdicionarPaciente(context),
+      onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(
+              builder: (_) => SearchPatientPage(medicoId: widget.userId))),
       borderRadius: BorderRadius.circular(20),
       child: Container(
         padding: const EdgeInsets.all(8),
@@ -248,7 +253,13 @@ class _HomePageMedicoState extends State<HomePageMedico> {
     final theme = Theme.of(context);
 
     return InkWell(
-      onTap: () => controller.navegarParaPerfilPaciente(paciente, context),
+      onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(
+              builder: (_) => PrescricaoPage(
+                  idMedico: widget.userId,
+                  idPaciente: paciente.id,
+                  nomePaciente: paciente.nome))),
       borderRadius: BorderRadius.circular(10),
       child: Container(
         width: double.infinity,
@@ -343,41 +354,5 @@ class _HomePageMedicoState extends State<HomePageMedico> {
       );
     }
     return const SizedBox(width: 12);
-  }
-
-  Future<void> _mostrarDialogoAdicionarPaciente(BuildContext context) async {
-    final nomeController = TextEditingController();
-
-    await showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Adicionar Paciente'),
-          content: TextField(
-            controller: nomeController,
-            decoration: const InputDecoration(
-              labelText: 'Nome do Paciente',
-              hintText: 'Digite o nome completo',
-            ),
-            autofocus: true,
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancelar'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                if (nomeController.text.trim().isNotEmpty) {
-                  controller.adicionarPaciente(nomeController.text.trim());
-                  Navigator.pop(context);
-                }
-              },
-              child: const Text('Adicionar'),
-            ),
-          ],
-        );
-      },
-    );
   }
 }

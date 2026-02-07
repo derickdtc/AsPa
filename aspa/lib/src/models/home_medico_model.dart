@@ -46,9 +46,9 @@ class PacienteListadoModel {
   factory PacienteListadoModel.fromJson(Map<String, dynamic> json) {
     return PacienteListadoModel(
       id: json['id'] ?? 0,
-      nome: json['nome'] ?? '',
-      ultimaConsulta: json['ultima_consulta'] != null
-          ? DateTime.tryParse(json['ultima_consulta'])
+      nome: json['nome'] ?? 'Sem Nome',
+      ultimaConsulta: json['data_diagnostico'] != null
+          ? DateTime.tryParse(json['data_diagnostico'])
           : null,
       temExerciciosPendentes: json['tem_exercicios_pendentes'] ?? false,
     );
@@ -96,30 +96,3 @@ class MedicoHomeState {
     );
   }
 }
-
-final mockPacientes = [
-  PacienteListadoModel(
-    id: 1,
-    nome: 'Pablo do Arrocha',
-    ultimaConsulta: DateTime.now().subtract(const Duration(days: 2)),
-    temExerciciosPendentes: true,
-  ),
-  PacienteListadoModel(
-    id: 2,
-    nome: 'Maria Luiza Costa Andrade',
-    ultimaConsulta: DateTime.now().subtract(const Duration(days: 5)),
-    temExerciciosPendentes: false,
-  ),
-  PacienteListadoModel(
-    id: 3,
-    nome: 'Japonês da Federal',
-    ultimaConsulta: DateTime.now().subtract(const Duration(days: 1)),
-    temExerciciosPendentes: true,
-  ),
-  PacienteListadoModel(
-    id: 4,
-    nome: 'Gustavo Assunção do Amaral',
-    ultimaConsulta: DateTime.now().subtract(const Duration(days: 10)),
-    temExerciciosPendentes: false,
-  ),
-];

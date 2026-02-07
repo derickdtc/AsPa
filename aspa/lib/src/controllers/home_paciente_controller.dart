@@ -14,9 +14,23 @@ class HomeController extends ChangeNotifier {
   PacienteModel? get paciente => _state.paciente;
   List<ExercicioPaciente> get exercicios => _state.exercicios;
   List<LembretePaciente> get lembretes => _state.lembretes;
-  int get streak => _state.paciente?.sequenciaDias ?? 0;
-  int get exerciciosParaHoje => _state.exerciciosParaHoje;
-  int get lembretesParaHoje => _state.lembretesParaHoje;
+  int get streak => paciente?.sequenciaDias ?? 0;
+
+  String get mensagemExercicios {
+    if (exercicios.isEmpty) {
+      return 'Nenhum exercício para hoje';
+    }
+    final exerciciosHoje = exercicios.where((e) => !e.concluido).length;
+    return '$exerciciosHoje exercício${exerciciosHoje != 1 ? 's' : ''} para hoje';
+  }
+
+  String get mensagemLembretes {
+    if (lembretes.isEmpty) {
+      return 'Nenhum lembrete para hoje';
+    }
+    final lembretesHoje = lembretes.where((l) => l.ativo).length;
+    return '$lembretesHoje lembrete${lembretesHoje != 1 ? 's' : ''} ativo${lembretesHoje != 1 ? 's' : ''}';
+  }
 
   Future<void> carregarDadosPaciente(int userId) async {
     _updateState(isLoading: true);
@@ -27,39 +41,18 @@ class HomeController extends ChangeNotifier {
       if (dadosPaciente != null) {
         final paciente = PacienteModel.fromJson(dadosPaciente);
 
-        // TODO: Carregar exercícios e lembretes do paciente
-        // final exerciciosData = await _api.getExerciciosPaciente(userId);
-        // final exercicios = exerciciosData.map((e) => ExercicioPaciente.fromJson(e)).toList();
-        //
-        // final lembretesData = await _api.getLembretesPaciente(userId);
-        // final lembretes = lembretesData.map((l) => LembretePaciente.fromJson(l)).toList();
+        final exerciciosData = await _api.getExerciciosPaciente(userId);
+        final exercicios =
+            exerciciosData.map((e) => ExercicioPaciente.fromJson(e)).toList();
 
-        // Mock data para desenvolvimento
-        final exerciciosMock = [
-          ExercicioPaciente(
-            id: 1,
-            nome: 'Jardineiro',
-            descricao: 'Exercício de coordenação motora',
-            dataAtribuicao: DateTime.now(),
-            concluido: false,
-            dificuldade: 2,
-          ),
-        ];
-
-        final lembretesMock = [
-          LembretePaciente(
-            id: 1,
-            titulo: 'Tomar medicamento',
-            descricao: 'Tomar remédio após o almoço',
-            dataHora: DateTime.now().add(const Duration(hours: 1)),
-            ativo: true,
-          ),
-        ];
+        final lembretesData = await _api.getLembretesPaciente(userId);
+        final lembretes =
+            lembretesData.map((l) => LembretePaciente.fromJson(l)).toList();
 
         _updateState(
           paciente: paciente,
-          exercicios: exerciciosMock,
-          lembretes: lembretesMock,
+          exercicios: exercicios,
+          lembretes: lembretes,
           isLoading: false,
         );
       } else {
@@ -70,69 +63,68 @@ class HomeController extends ChangeNotifier {
       }
     } catch (e) {
       _updateState(
-        errorMessage: 'Erro de conexão. Tente novamente.',
+        errorMessage: 'Erro de conexão.',
         isLoading: false,
       );
     }
   }
 
-  Future<void> atualizarStreak(int novoStreak) async {
-    if (_state.paciente != null) {
-      final pacienteAtualizado = PacienteModel(
-        id: _state.paciente!.id,
-        nome: _state.paciente!.nome,
-        email: _state.paciente!.email,
-        sequenciaDias: novoStreak,
-        dataDiagnostico: _state.paciente!.dataDiagnostico,
-        dataCadastro: _state.paciente!.dataCadastro,
-        idade: _state.paciente!.idade,
-      );
+  Future<void> _carregarPrescricaoEDependentes(int pacienteId) async {
+    try {
+      // Primeiro, precisamos buscar a prescrição do paciente
+      // Como não temos um endpoint direto, vamos tentar buscar por ID ou listar
+      // Vou assumir que temos o ID da prescrição ou podemos buscar a última
 
-      _updateState(paciente: pacienteAtualizado);
+      // Para simplificar, vamos criar um endpoint no backend se não existir
+      // Por enquanto, vamos buscar a prescrição mais recente
+      await _buscarPrescricaoMaisRecente(pacienteId);
+    } catch (e) {
+      print("Erro ao carregar prescrição: $e");
+      _updateState(isLoading: false);
+    }
+  }
 
-      // TODO: Atualizar streak na API
-      // await _api.atualizarStreak(_state.paciente!.id, novoStreak);
+  Future<void> _buscarPrescricaoMaisRecente(int pacienteId) async {
+    try {
+      // Esta é uma solução temporária - você precisará criar um endpoint no backend
+      // para buscar a prescrição do paciente
+
+      // Por enquanto, vou mostrar como seria se tivéssemos os endpoints:
+      // 1. Buscar prescrição do paciente
+      // 2. Buscar exercícios da prescrição
+      // 3. Buscar lembretes da prescrição
+
+      // Para exercícios, vamos usar dados mock por enquanto
+      // Você precisa implementar endpoints específicos no backend
+
+      _updateState(isLoading: false);
+    } catch (e) {
+      print("Erro ao buscar prescrição: $e");
+      _updateState(isLoading: false);
     }
   }
 
   Future<void> marcarExercicioConcluido(int exercicioId) async {
-    final exerciciosAtualizados = _state.exercicios.map((exercicio) {
-      if (exercicio.id == exercicioId) {
-        return ExercicioPaciente(
-          id: exercicio.id,
-          nome: exercicio.nome,
-          descricao: exercicio.descricao,
-          dataAtribuicao: exercicio.dataAtribuicao,
-          concluido: true,
-          dataConclusao: DateTime.now(),
-          dificuldade: exercicio.dificuldade,
-        );
-      }
-      return exercicio;
-    }).toList();
+    final exercicioIndex = exercicios.indexWhere((e) => e.id == exercicioId);
+    if (exercicioIndex != -1) {
+      final exercicio = exercicios[exercicioIndex];
+      final exercicioAtualizado = ExercicioPaciente(
+        id: exercicio.id,
+        nome: exercicio.nome,
+        descricao: exercicio.descricao,
+        dataAtribuicao: exercicio.dataAtribuicao,
+        concluido: true,
+        dificuldade: exercicio.dificuldade,
+      );
 
-    _updateState(exercicios: exerciciosAtualizados);
+      final novaLista = List<ExercicioPaciente>.from(exercicios);
+      novaLista[exercicioIndex] = exercicioAtualizado;
 
-    // TODO: Atualizar exercício na API
-    // await _api.marcarExercicioConcluido(exercicioId);
-  }
+      _updateState(exercicios: novaLista);
 
-  Future<void> adicionarLembrete(
-      String titulo, String descricao, DateTime dataHora) async {
-    final novoLembrete = LembretePaciente(
-      id: _state.lembretes.length + 1,
-      titulo: titulo,
-      descricao: descricao,
-      dataHora: dataHora,
-      ativo: true,
-    );
-
-    _updateState(
-      lembretes: [..._state.lembretes, novoLembrete],
-    );
-
-    // TODO: Adicionar lembrete na API
-    // await _api.adicionarLembrete(_state.paciente!.id, titulo, descricao, dataHora);
+      // Aqui você pode chamar a API para atualizar no backend
+      // await _api.marcarExercicioConcluido(exercicioId, widget.userId);
+    }
   }
 
   void _updateState({
@@ -155,28 +147,6 @@ class HomeController extends ChangeNotifier {
   void limparErro() {
     if (_state.errorMessage != null) {
       _updateState(errorMessage: null);
-    }
-  }
-
-  String get mensagemExercicios {
-    final count = exerciciosParaHoje;
-    if (count == 0) {
-      return 'Você não tem exercícios para hoje!';
-    } else if (count == 1) {
-      return 'Você tem 1 exercício para hoje!';
-    } else {
-      return 'Você tem $count exercícios para hoje!';
-    }
-  }
-
-  String get mensagemLembretes {
-    final count = lembretesParaHoje;
-    if (count == 0) {
-      return 'Você não tem lembretes para hoje!';
-    } else if (count == 1) {
-      return 'Você tem 1 lembrete para hoje!';
-    } else {
-      return 'Você tem $count lembretes para hoje!';
     }
   }
 }

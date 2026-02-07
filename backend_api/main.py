@@ -66,7 +66,8 @@ class PacienteDB(Base):
     id_paciente = Column(Integer, ForeignKey("usuario.id_usuario"), primary_key=True)
     data_diagnostico = Column(Date)
     sequencia_dias = Column(Integer, default=0)
-    
+    id_medico_responsavel = Column(Integer, ForeignKey("profissional_saude.id_profissional_saude"), nullable=True)
+    medico = relationship("ProfissionalSaudeDB", foreign_keys=[id_medico_responsavel])
     usuario = relationship("UsuarioDB", back_populates="paciente")
     sessoes = relationship("SessaoDB", back_populates="paciente", cascade="all, delete-orphan")
     prescricoes = relationship("PrescricaoDB", back_populates="paciente", cascade="all, delete-orphan")
@@ -92,8 +93,9 @@ class PrescricaoDB(Base):
     observacoes_gerais = Column(String(300))
     
     id_paciente = Column("id_paciente_fk",Integer, ForeignKey("paciente.id_paciente"), nullable=False)
-    
+    id_medico = Column(Integer, ForeignKey("profissional_saude.id_profissional_saude"), nullable=True)
     paciente = relationship("PacienteDB", back_populates="prescricoes")
+    medico = relationship("ProfissionalSaudeDB")
     lembretes = relationship("LembreteDB", back_populates="prescricao", cascade="all, delete-orphan")
     
     prescricao_exercicio = relationship("PrescricaoExercicioDB", back_populates="prescricao")
@@ -176,6 +178,7 @@ class SessionCreate(BaseModel):
     
 class PrescricaoCreate(BaseModel):
     id_paciente: int
+    id_medico: int
     data_atualizacao: datetime
     observacoes_gerais: str
     
@@ -754,20 +757,44 @@ def delete_sessao(sessao_id: int, db: Session = Depends(get_db)):
 
 @app.post("/prescricoes/")
 def criar_prescricao(prescricao: PrescricaoCreate, db: Session = Depends(get_db)):
-    paciente = db.query(PacienteDB).filter(
-        PacienteDB.id_paciente == prescricao.id_paciente
-    ).first()
-
+    paciente = db.query(PacienteDB).filter(PacienteDB.id_paciente == prescricao.id_paciente).first()
     if not paciente:
         raise HTTPException(status_code=404, detail="Paciente não encontrado")
+
+    medico = db.query(ProfissionalSaudeDB).filter(ProfissionalSaudeDB.id_profissional_saude == prescricao.id_medico).first()
+    if not medico:
+        raise HTTPException(status_code=404, detail="Médico não encontrado")
     
-    nova_prescricao = PrescricaoDB(data_atualizacao=prescricao.data_atualizacao, observacoes_gerais=prescricao.observacoes_gerais, paciente=paciente)
-    # criando usuário
-    db.add(nova_prescricao)
-    db.commit()
-    db.refresh(nova_prescricao) 
-    
-    return {"msg": "prescricao criada", "id_prescricao": nova_prescricao.id_prescricao, "id_paciente": paciente.id_paciente}
+    prescricao_existente = db.query(PrescricaoDB).filter(
+        PrescricaoDB.id_paciente == prescricao.id_paciente
+    ).first()
+
+    if prescricao_existente:
+        print(f"Prescrição já existe para paciente {prescricao.id_paciente}. Atualizando...")
+        
+        prescricao_existente.data_atualizacao = prescricao.data_atualizacao
+        prescricao_existente.observacoes_gerais = prescricao.observacoes_gerais
+        prescricao_existente.id_medico = prescricao.id_medico
+        
+        db.commit()
+        db.refresh(prescricao_existente)
+        return {"msg": "Prescrição atualizada", "id_prescricao": prescricao_existente.id_prescricao}
+
+    else:
+        print(f"Criando nova prescrição para paciente {prescricao.id_paciente}...")
+        
+        nova_prescricao = PrescricaoDB(
+            data_atualizacao=prescricao.data_atualizacao, 
+            observacoes_gerais=prescricao.observacoes_gerais, 
+            paciente=paciente,
+            id_medico=prescricao.id_medico 
+        )
+        
+        db.add(nova_prescricao)
+        db.commit()
+        db.refresh(nova_prescricao) 
+        
+        return {"msg": "Prescrição criada", "id_prescricao": nova_prescricao.id_prescricao}
 
 @app.get("/prescricoes/{prescricao_id}")
 def ler_prescricao(prescricao_id: int, db: Session = Depends(get_db)):
@@ -1016,7 +1043,104 @@ def login(dados: LoginRequest, db: Session = Depends(get_db)):
         "nome": usuario.nome,
         "tipo_usuario": tipo_usuario 
     }
+    
+@app.put("/pacientes/{id_paciente}/vincular_medico/{id_medico}")
+def vincular_paciente_medico(id_paciente: int, id_medico: int, db: Session = Depends(get_db)):
+    paciente = db.query(PacienteDB).filter(PacienteDB.id_paciente == id_paciente).first()
+    if not paciente:
+        raise HTTPException(status_code=404, detail="Paciente não encontrado")
 
+    medico = db.query(ProfissionalSaudeDB).filter(ProfissionalSaudeDB.id_profissional_saude == id_medico).first()
+    if not medico:
+        raise HTTPException(status_code=404, detail="Médico não encontrado")
+
+    paciente.id_medico_responsavel = id_medico
+    db.commit()
+    
+    return {"msg": "Vínculo realizado com sucesso!"}
+
+@app.get("/medicos/{id_medico}/meus_pacientes")
+def listar_pacientes_do_medico(id_medico: int, db: Session = Depends(get_db)):
+    pacientes = db.query(PacienteDB).filter(PacienteDB.id_medico_responsavel == id_medico).all()
+    
+    resultado = []
+    for p in pacientes:
+        dados_usuario = p.usuario 
+        resultado.append({
+            "id": p.id_paciente,
+            "nome": dados_usuario.nome,
+            "email": dados_usuario.email,
+            "foto": dados_usuario.foto,
+            "data_diagnostico": p.data_diagnostico
+        })
+    return resultado
+
+@app.put("/amizade/responder/{id_amizade}")
+def responder_amizade(id_amizade: int, aceitar: bool, db: Session = Depends(get_db)):
+    amizade = db.query(AmizadeDB).filter(AmizadeDB.id == id_amizade).first()
+    
+    if not amizade:
+        raise HTTPException(status_code=404, detail="Pedido não encontrado")
+    
+    if aceitar:
+        amizade.status = "aceito"
+        
+        medico = db.query(ProfissionalSaudeDB).filter(
+            ProfissionalSaudeDB.id_profissional_saude == amizade.solicitante_id
+        ).first()
+        
+        paciente = db.query(PacienteDB).filter(
+            PacienteDB.id_paciente == amizade.recebedor_id
+        ).first()
+        
+        if medico and paciente:
+            paciente.id_medico_responsavel = medico.id_profissional_saude
+
+        db.commit()
+        return {"msg": "Amizade aceita e vínculo criado!"}
+    else:
+        db.delete(amizade)
+        db.commit()
+        return {"msg": "Pedido recusado"}
+    
+
+@app.get("/exercicios_catalogo/") 
+def listar_catalogo_exercicios(db: Session = Depends(get_db)):
+    return db.query(ExercicioDB).all()
+
+
+@app.get("/pacientes/{id_paciente}/lembretes")
+def listar_todos_lembretes_paciente(id_paciente: int, db: Session = Depends(get_db)):
+    lembretes = db.query(LembreteDB).join(PrescricaoDB).filter(
+        PrescricaoDB.id_paciente == id_paciente,
+        LembreteDB.status == "ativo"
+    ).all()
+    return lembretes
+
+@app.get("/pacientes/{id_paciente}/exercicios_prescritos")
+def listar_exercicios_paciente(id_paciente: int, db: Session = Depends(get_db)):
+
+    resultados = db.query(PrescricaoExercicioDB, ExercicioDB).join(
+        ExercicioDB, PrescricaoExercicioDB.id_exercicio_fk == ExercicioDB.id_exercicio
+    ).join(
+        PrescricaoDB, PrescricaoExercicioDB.id_prescricao_fk == PrescricaoDB.id_prescricao
+    ).filter(
+        PrescricaoDB.id_paciente == id_paciente
+    ).all()
+    
+    lista_formatada = []
+    for presc_ex, exercicio_info in resultados:
+        lista_formatada.append({
+            "id_exercicio_prescrito": presc_ex.id_exercicio_fk,
+            "nome": exercicio_info.nome,
+            "descricao": exercicio_info.descricao,
+            "repeticoes": presc_ex.repeticoes,
+            "duracao_minutos": presc_ex.duracao_minutos,
+            "frequencia": presc_ex.frequencia_semanal,
+            "data_atribuicao": str(presc_ex.prescricao.data_atualizacao) 
+        })
+        
+    return lista_formatada
 # teste
 @app.get("/")
 def health_check():
