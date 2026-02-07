@@ -15,7 +15,8 @@ class HomeController extends ChangeNotifier {
   List<ExercicioPaciente> get exercicios => _state.exercicios;
   List<LembretePaciente> get lembretes => _state.lembretes;
   int get streak => paciente?.sequenciaDias ?? 0;
-
+  List<ExercicioPaciente> get exerciciosPendentes =>
+      exercicios.where((e) => !e.concluido).toList();
   String get mensagemExercicios {
     if (exercicios.isEmpty) {
       return 'Nenhum exercício para hoje';
@@ -69,23 +70,44 @@ class HomeController extends ChangeNotifier {
     }
   }
 
-  Future<void> marcarExercicioConcluido(int exercicioId) async {
-    final exercicioIndex = exercicios.indexWhere((e) => e.id == exercicioId);
-    if (exercicioIndex != -1) {
-      final exercicio = exercicios[exercicioIndex];
-      final exercicioAtualizado = ExercicioPaciente(
-        id: exercicio.id,
-        nome: exercicio.nome,
-        descricao: exercicio.descricao,
-        dataAtribuicao: exercicio.dataAtribuicao,
-        concluido: true,
-        dificuldade: exercicio.dificuldade,
-      );
+  Future<void> excluirLembrete(int idLembrete) async {
+    final sucesso = await _api.deleteLembrete(idLembrete);
 
-      final novaLista = List<ExercicioPaciente>.from(exercicios);
-      novaLista[exercicioIndex] = exercicioAtualizado;
+    if (sucesso) {
+      final novaLista = lembretes.where((l) => l.id != idLembrete).toList();
+      _updateState(lembretes: novaLista);
+    } else {
+      _updateState(errorMessage: "Erro ao excluir lembrete.");
+    }
+  }
 
-      _updateState(exercicios: novaLista);
+  Future<void> marcarExercicioConcluido(
+      int idPrescricao, int idExercicio) async {
+    final sucesso =
+        await _api.marcarExercicioComoFeito(idPrescricao, idExercicio);
+
+    if (sucesso) {
+      final index = exercicios.indexWhere((e) =>
+          e.idPrescricao == idPrescricao && e.idExercicio == idExercicio);
+
+      if (index != -1) {
+        final exAntigo = exercicios[index];
+        final exAtualizado = ExercicioPaciente(
+            idPrescricao: exAntigo.idPrescricao,
+            idExercicio: exAntigo.idExercicio,
+            nome: exAntigo.nome,
+            descricao: exAntigo.descricao,
+            dataAtribuicao: exAntigo.dataAtribuicao,
+            concluido: true,
+            dificuldade: exAntigo.dificuldade);
+
+        final novaLista = List<ExercicioPaciente>.from(exercicios);
+        novaLista[index] = exAtualizado;
+
+        _updateState(exercicios: novaLista);
+      }
+    } else {
+      _updateState(errorMessage: "Erro ao concluir exercício");
     }
   }
 

@@ -11,7 +11,6 @@ class ExerciciosPage extends StatefulWidget {
 }
 
 class _ExerciciosPageState extends State<ExerciciosPage> {
-  // Reaproveitamos o Controller para ter a lógica de "Marcar Concluído" e buscar dados
   final HomeController controller = HomeController();
 
   @override
@@ -34,17 +33,28 @@ class _ExerciciosPageState extends State<ExerciciosPage> {
             return const Center(child: CircularProgressIndicator());
           }
 
-          if (controller.exercicios.isEmpty) {
+          final listaExibicao = controller.exerciciosPendentes;
+
+          if (listaExibicao.isEmpty) {
             return Center(
-                child: Text("Nenhum exercício encontrado.",
-                    style: theme.textTheme.bodyLarge));
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.check_circle_outline,
+                      size: 80, color: Colors.green.withValues(alpha: 0.5)),
+                  const SizedBox(height: 10),
+                  Text("Tudo feito por hoje!",
+                      style: theme.textTheme.bodyLarge),
+                ],
+              ),
+            );
           }
 
           return ListView.builder(
             padding: const EdgeInsets.all(16),
-            itemCount: controller.exercicios.length,
+            itemCount: listaExibicao.length, // usa o count da lista filtrada
             itemBuilder: (context, index) {
-              final exercicio = controller.exercicios[index];
+              final exercicio = listaExibicao[index];
               return _buildExercicioItem(context, exercicio, colorScheme);
             },
           );
@@ -53,7 +63,6 @@ class _ExerciciosPageState extends State<ExerciciosPage> {
     );
   }
 
-  // Trouxemos esse Widget da Home para cá
   Widget _buildExercicioItem(BuildContext context, ExercicioPaciente exercicio,
       ColorScheme colorScheme) {
     return Container(
@@ -88,7 +97,6 @@ class _ExerciciosPageState extends State<ExerciciosPage> {
                         ?.copyWith(color: colorScheme.onSurfaceVariant),
                   ),
                 const SizedBox(height: 5),
-                // Exibe a data de atribuição se quiser
                 Text(
                   "Atribuído em: ${_formatDate(exercicio.dataAtribuicao)}",
                   style: TextStyle(fontSize: 12, color: Colors.grey),
@@ -98,8 +106,8 @@ class _ExerciciosPageState extends State<ExerciciosPage> {
           ),
           if (!exercicio.concluido)
             IconButton(
-              onPressed: () =>
-                  controller.marcarExercicioConcluido(exercicio.id),
+              onPressed: () => controller.marcarExercicioConcluido(
+                  exercicio.idPrescricao, exercicio.idExercicio),
               icon: const Icon(Icons.play_circle_fill),
               color: colorScheme.primary,
               iconSize: 32,

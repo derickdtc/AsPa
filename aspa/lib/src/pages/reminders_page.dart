@@ -70,7 +70,7 @@ class _LembretesPageState extends State<LembretesPage> {
       child: Row(
         children: [
           Container(
-            padding: EdgeInsets.all(8),
+            padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
                 color: lembrete.ativo
                     ? colorScheme.secondary.withValues(alpha: 0.1)
@@ -93,7 +93,7 @@ class _LembretesPageState extends State<LembretesPage> {
                       ?.copyWith(fontWeight: FontWeight.bold),
                 ),
                 Text(
-                  lembrete.descricao, // Dose e tipo
+                  lembrete.descricao,
                   style: theme.textTheme.bodyMedium
                       ?.copyWith(color: colorScheme.onSurfaceVariant),
                 ),
@@ -102,13 +102,40 @@ class _LembretesPageState extends State<LembretesPage> {
           ),
           Column(
             children: [
-              Icon(Icons.access_time, size: 16, color: colorScheme.primary),
               Text(
                 '${lembrete.dataHora.hour.toString().padLeft(2, '0')}:${lembrete.dataHora.minute.toString().padLeft(2, '0')}',
                 style: theme.textTheme.titleLarge?.copyWith(
                     color: colorScheme.primary, fontWeight: FontWeight.bold),
               ),
+              IconButton(
+                icon: const Icon(Icons.delete_outline, color: Colors.red),
+                onPressed: () => _confirmarExclusao(context, lembrete.id),
+              )
             ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _confirmarExclusao(BuildContext context, int id) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text("Excluir Lembrete"),
+        content: const Text(
+            "Tem certeza que deseja apagar este medicamento da sua lista?"),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text("Cancelar"),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(ctx); // fech o dialog
+              controller.excluirLembrete(id); // chama a exclusão
+            },
+            child: const Text("Excluir", style: TextStyle(color: Colors.red)),
           ),
         ],
       ),

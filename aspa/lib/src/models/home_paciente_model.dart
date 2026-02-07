@@ -57,7 +57,8 @@ class PacienteModel {
 }
 
 class ExercicioPaciente {
-  final int id;
+  final int idPrescricao;
+  final int idExercicio;
   final String nome;
   final String descricao;
   final DateTime dataAtribuicao;
@@ -65,7 +66,8 @@ class ExercicioPaciente {
   final int dificuldade;
 
   ExercicioPaciente({
-    required this.id,
+    required this.idPrescricao,
+    required this.idExercicio,
     required this.nome,
     required this.descricao,
     required this.dataAtribuicao,
@@ -74,7 +76,6 @@ class ExercicioPaciente {
   });
 
   factory ExercicioPaciente.fromJson(Map<String, dynamic> json) {
-    // Monta uma descrição com os dados da prescrição
     String desc = json['descricao'] ?? '';
     if (json['repeticoes'] != null) {
       desc +=
@@ -82,14 +83,15 @@ class ExercicioPaciente {
     }
 
     return ExercicioPaciente(
-      id: json['id_exercicio_prescrito'] ?? 0,
+      idPrescricao: json['id_prescricao'] ?? 0,
+      idExercicio: json['id_exercicio'] ?? 0,
       nome: json['nome'] ?? 'Exercício',
       descricao: desc,
       dataAtribuicao: json['data_atribuicao'] != null
           ? DateTime.tryParse(json['data_atribuicao']) ?? DateTime.now()
           : DateTime.now(),
-      concluido: false, // Controle local por enquanto
-      dificuldade: 1, // Se o banco tiver dificuldade, mapeie aqui
+      concluido: json['concluido_hoje'] ?? false,
+      dificuldade: 1,
     );
   }
 }
