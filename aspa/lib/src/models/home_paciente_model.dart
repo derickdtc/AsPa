@@ -19,7 +19,7 @@ class PacienteModel {
 
   factory PacienteModel.fromJson(Map<String, dynamic> json) {
     return PacienteModel(
-      id: json['id'] ?? 0,
+      id: json['id_usuario'] ?? 0,
       nome: json['nome'] ?? '',
       email: json['email'] ?? '',
       sequenciaDias: json['sequencia_dias'] ?? 0,

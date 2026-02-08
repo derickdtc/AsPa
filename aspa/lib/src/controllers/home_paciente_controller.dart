@@ -17,6 +17,8 @@ class HomeController extends ChangeNotifier {
   int get streak => paciente?.sequenciaDias ?? 0;
   List<ExercicioPaciente> get exerciciosPendentes =>
       exercicios.where((e) => !e.concluido).toList();
+  List<ExercicioPaciente> get exerciciosFeitos =>
+      exercicios.where((e) => e.concluido).toList();
   String get mensagemExercicios {
     if (exercicios.isEmpty) {
       return 'Nenhum exercício para hoje';
@@ -83,6 +85,9 @@ class HomeController extends ChangeNotifier {
 
   Future<void> marcarExercicioConcluido(
       int idPrescricao, int idExercicio) async {
+    
+    final exercicioFeitoHoje = exerciciosFeitos.isNotEmpty;
+    
     final sucesso =
         await _api.marcarExercicioComoFeito(idPrescricao, idExercicio);
 
@@ -105,6 +110,10 @@ class HomeController extends ChangeNotifier {
         novaLista[index] = exAtualizado;
 
         _updateState(exercicios: novaLista);
+
+        if(!exercicioFeitoHoje){
+          await aumentarStreak();
+        }
       }
     } else {
       _updateState(errorMessage: "Erro ao concluir exercício");
@@ -131,6 +140,25 @@ class HomeController extends ChangeNotifier {
   void limparErro() {
     if (_state.errorMessage != null) {
       _updateState(errorMessage: null);
+    }
+  }
+
+  Future<void> aumentarStreak() async {
+    final pacienteAtual = paciente;
+    if (pacienteAtual == null) return;
+
+    final novaStreak = pacienteAtual.sequenciaDias + 1;
+
+    final response = await _api.updatePaciente(
+      pacienteAtual.id,
+      sequenciaDias: novaStreak,
+    );
+
+    if (response != null) {
+      final pacienteAtualizado = PacienteModel.fromJson(response);
+      _updateState(paciente: pacienteAtualizado);
+    } else {
+      _updateState(errorMessage: "Erro ao salvar streak");
     }
   }
 }
