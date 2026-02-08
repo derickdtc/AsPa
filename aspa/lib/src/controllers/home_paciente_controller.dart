@@ -73,10 +73,19 @@ class HomeController extends ChangeNotifier {
   }
 
   Future<void> excluirLembrete(int idLembrete) async {
-    final sucesso = await _api.deleteLembrete(idLembrete);
+    final lembreteAtualizado = await _api.updateLembrete(
+      idLembrete,
+      status: "inativo",
+    );
 
-    if (sucesso) {
-      final novaLista = lembretes.where((l) => l.id != idLembrete).toList();
+    if (lembreteAtualizado != null) {
+      final novaLista = lembretes.map((l) {
+        if (l.id == idLembrete) {
+          return LembretePaciente.fromJson(lembreteAtualizado);
+        }
+        return l;
+      }).toList();
+
       _updateState(lembretes: novaLista);
     } else {
       _updateState(errorMessage: "Erro ao excluir lembrete.");
