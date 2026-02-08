@@ -5,10 +5,10 @@ class ApiService {
   // ATENÇÃO AQUI:
   // se usar Emulador Android use '10.0.2.2'
   // se usar celular use o IP do PC (ex: '192.168.1.15')
-  // se usar iOS emulador use '127.0.0.1'
   // se usar Edge/Chrome use http://127.0.0.1:8000
-  static const String baseUrl = "http://127.0.0.1:8000";
-
+  static const String baseUrl =
+      "https://kylah-savouriest-superserviceably.ngrok-free.dev";
+// ngrok
   // static const String baseUrl = "http://192.168.3.126:8000";
 
   Future<Map<String, dynamic>?> login(String email, String senha) async {

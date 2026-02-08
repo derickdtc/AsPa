@@ -1,0 +1,543 @@
+@startuml
+set namespaceSeparator ::
+
+class "aspa::api_service.dart::ApiService" {
+  {static} +String baseUrl
+  +dynamic login()
+  +dynamic cadastrarPaciente()
+  +dynamic getPaciente()
+  +dynamic updatePaciente()
+  +dynamic deletePaciente()
+  +dynamic getHistoricoChat()
+  +dynamic cadastrarMedico()
+  +dynamic getMedico()
+  +dynamic updateMedico()
+  +dynamic deleteMedico()
+  +dynamic cadastrarSessao()
+  +dynamic getSessao()
+  +dynamic updateSessao()
+  +dynamic deleteSessao()
+  +dynamic buscarUsuarios()
+  +dynamic solicitarAmizade()
+  +dynamic cadastrarPrescricao()
+  +dynamic getPrescricao()
+  +dynamic updatePrescricao()
+  +dynamic deletePrescricao()
+  +dynamic getPedidosPendentes()
+  +dynamic responderAmizade()
+  +dynamic cadastrarLembrete()
+  +dynamic marcarExercicioComoFeito()
+  +dynamic getLembrete()
+  +dynamic updateLembrete()
+  +dynamic deleteLembrete()
+  +dynamic getMeusAmigos()
+  +dynamic cadastrarPrescricaoExercicio()
+  +dynamic getPrescricaoExercicio()
+  +dynamic updatePrescricaoExercicio()
+  +dynamic deletePrescricaoExercicio()
+  +dynamic cadastrarExercicio()
+  +dynamic getExercicio()
+  +dynamic updateExercicio()
+  +dynamic deleteExercicio()
+  +dynamic vincularMedicoAoPaciente()
+  +dynamic getPacientesDoMedico()
+  +dynamic criarPrescricaoBase()
+  +dynamic adicionarRemedio()
+  +dynamic getCatalogoExercicios()
+  +dynamic getLembretesPaciente()
+  +dynamic getExerciciosPaciente()
+}
+
+
+class "aspa::src::controllers::classification_game_controller.dart::GameController" {
+  +GameModel model
+  +int score
+  +List<GameItem> items
+  +DifficultyLevel currentDifficulty
+  +int totalItems
+  +double progress
+  +void resetGame()
+  +void changeDifficulty()
+  +void onItemDropped()
+  +List<Map<String, dynamic>> getBasketConfigs()
+}
+
+"aspa::src::controllers::classification_game_controller.dart::GameController" o-- "aspa::src::models::classification_game_model.dart::GameModel"
+"aspa::src::controllers::classification_game_controller.dart::GameController" o-- "aspa::src::models::classification_game_model.dart::DifficultyLevel"
+
+class "aspa::src::controllers::home_medico_controller.dart::HomeMedicoController" {
+  -ApiService _api
+  -MedicoHomeState _state
+  +MedicoHomeState state
+  +bool isLoading
+  +String? errorMessage
+  +MedicoModel? medico
+  +List<PacienteListadoModel> pacientes
+  +String crm
+  +dynamic carregarDadosMedico()
+  +dynamic carregarPacientes()
+  +dynamic adicionarPaciente()
+  +void navegarParaPerfilPaciente()
+  -void _updateState()
+  +void limparErro()
+  +void atualizarNomeMedico()
+}
+
+"aspa::src::controllers::home_medico_controller.dart::HomeMedicoController" o-- "aspa::api_service.dart::ApiService"
+"aspa::src::controllers::home_medico_controller.dart::HomeMedicoController" o-- "aspa::src::models::home_medico_model.dart::MedicoHomeState"
+"aspa::src::controllers::home_medico_controller.dart::HomeMedicoController" o-- "aspa::src::models::home_medico_model.dart::MedicoModel"
+"flutter::src::foundation::change_notifier.dart::ChangeNotifier" <|-- "aspa::src::controllers::home_medico_controller.dart::HomeMedicoController"
+
+class "aspa::src::controllers::home_paciente_controller.dart::HomeController" {
+  -ApiService _api
+  -PacienteHomeState _state
+  +PacienteHomeState state
+  +bool isLoading
+  +String? errorMessage
+  +PacienteModel? paciente
+  +List<ExercicioPaciente> exercicios
+  +List<LembretePaciente> lembretes
+  +int streak
+  +List<ExercicioPaciente> exerciciosPendentes
+  +String mensagemExercicios
+  +String mensagemLembretes
+  +dynamic carregarDadosPaciente()
+  +dynamic excluirLembrete()
+  +dynamic marcarExercicioConcluido()
+  -void _updateState()
+  +void limparErro()
+}
+
+"aspa::src::controllers::home_paciente_controller.dart::HomeController" o-- "aspa::api_service.dart::ApiService"
+"aspa::src::controllers::home_paciente_controller.dart::HomeController" o-- "aspa::src::models::home_paciente_model.dart::PacienteHomeState"
+"aspa::src::controllers::home_paciente_controller.dart::HomeController" o-- "aspa::src::models::home_paciente_model.dart::PacienteModel"
+"flutter::src::foundation::change_notifier.dart::ChangeNotifier" <|-- "aspa::src::controllers::home_paciente_controller.dart::HomeController"
+
+class "aspa::src::controllers::jardineiro_game_controller.dart::JardineiroGameController" {
+  +GameConfig config
+  +GameStats stats
+  +int currentScore
+  +bool isGameActive
+  +double flowerTop
+  +double flowerLeft
+  +Random random
+  +Stopwatch reactionTimer
+  +Timer? autoMoveTimer
+  +bool audioInitialized
+  +void Function()? onGameStateChanged
+  +dynamic Function(int)? onScoreChanged
+  +dynamic Function(double, double)? onFlowerMoved
+  +Function? onGameFinished
+  +dynamic initAudio()
+  +void startGame()
+  -void _startAutoMoveTimer()
+  -void _moveFlower()
+  +void handleFlowerTap()
+  +void handleBackgroundTap()
+  -dynamic _playSound()
+  +void finishGame()
+  +void changeDifficulty()
+  -void _notifyGameStateChanged()
+  -void _notifyScoreChanged()
+  +void dispose()
+}
+
+"aspa::src::controllers::jardineiro_game_controller.dart::JardineiroGameController" o-- "aspa::src::models::jardineiro_game_model.dart::GameConfig"
+"aspa::src::controllers::jardineiro_game_controller.dart::JardineiroGameController" o-- "aspa::src::models::jardineiro_game_model.dart::GameStats"
+"aspa::src::controllers::jardineiro_game_controller.dart::JardineiroGameController" o-- "dart::math::Random"
+"aspa::src::controllers::jardineiro_game_controller.dart::JardineiroGameController" o-- "dart::async::Timer"
+"aspa::src::controllers::jardineiro_game_controller.dart::JardineiroGameController" o-- "audioplayers::src::audioplayer.dart::AudioPlayer"
+"aspa::src::controllers::jardineiro_game_controller.dart::JardineiroGameController" o-- "dart::ui::void Function()"
+"aspa::src::controllers::jardineiro_game_controller.dart::JardineiroGameController" o-- "null::dynamic Function(int)"
+"aspa::src::controllers::jardineiro_game_controller.dart::JardineiroGameController" o-- "null::dynamic Function(double, double)"
+
+class "aspa::src::controllers::login_controller.dart::LoginController" {
+  -ApiService _api
+  -bool _isLoading
+  -String? _errorMessage
+  -LoginCredentials _credentials
+  +bool isLoading
+  +String? errorMessage
+  +void setEmail()
+  +void setSenha()
+  +dynamic login()
+  +void clearError()
+}
+
+"aspa::src::controllers::login_controller.dart::LoginController" o-- "aspa::api_service.dart::ApiService"
+"aspa::src::controllers::login_controller.dart::LoginController" o-- "aspa::src::models::login_model.dart::LoginCredentials"
+"flutter::src::foundation::change_notifier.dart::ChangeNotifier" <|-- "aspa::src::controllers::login_controller.dart::LoginController"
+
+class "aspa::src::controllers::profile_controller.dart::ProfileController" {
+  -ApiService _api
+  -ProfileState _state
+  +ProfileState state
+  +bool isLoading
+  +String? errorMessage
+  +UserProfile? userProfile
+  +List<ProfileMenuItem> menuItems
+  +String nome
+  +String email
+  +String? crm
+  +bool isMedico
+  +dynamic carregarDados()
+  -List<ProfileMenuItem> _buildMedicoMenuItems()
+  -List<ProfileMenuItem> _buildPacienteMenuItems()
+  +dynamic atualizarPerfil()
+  -void _updateState()
+  +void limparErro()
+  +void fazerLogout()
+}
+
+"aspa::src::controllers::profile_controller.dart::ProfileController" o-- "aspa::api_service.dart::ApiService"
+"aspa::src::controllers::profile_controller.dart::ProfileController" o-- "aspa::src::models::profile_model.dart::ProfileState"
+"aspa::src::controllers::profile_controller.dart::ProfileController" o-- "aspa::src::models::profile_model.dart::UserProfile"
+"flutter::src::foundation::change_notifier.dart::ChangeNotifier" <|-- "aspa::src::controllers::profile_controller.dart::ProfileController"
+
+class "aspa::src::controllers::signup_controller.dart::SignUpController" {
+  -ApiService _api
+  -bool _isLoading
+  -String? _errorMessage
+  -SignUpFormData _formData
+  +bool isLoading
+  +String? errorMessage
+  +SignUpFormData formData
+  +UserType userType
+  +DateTime? selectedDate
+  +DateTime? dataNascimento
+  +void setUserType()
+  +void setDataNascimento()
+  +void setSelectedDate()
+  +void setNome()
+  +void setEmail()
+  +void setSenha()
+  +void setConfirmarSenha()
+  +void setCrm()
+  +ValidationResult validateForm()
+  +dynamic cadastrar()
+  +void resetForm()
+  +void clearError()
+}
+
+"aspa::src::controllers::signup_controller.dart::SignUpController" o-- "aspa::api_service.dart::ApiService"
+"aspa::src::controllers::signup_controller.dart::SignUpController" o-- "aspa::src::models::signup_model.dart::SignUpFormData"
+"aspa::src::controllers::signup_controller.dart::SignUpController" o-- "aspa::src::models::signup_model.dart::UserType"
+"flutter::src::foundation::change_notifier.dart::ChangeNotifier" <|-- "aspa::src::controllers::signup_controller.dart::SignUpController"
+
+class "aspa::src::controllers::tracing_game_controller.dart::TracingController" {
+  -LevelModel _currentLevel
+  -SessionModel _session
+  -int _currentLevelIndex
+  +bool isLastLevel
+  +List<Offset> userPath
+  +GameStatus status
+  +LevelModel level
+  +GameDifficulty difficulty
+  +bool isGameFinished
+  +void setDifficulty()
+  -double _getWidthForDifficulty()
+  +void initLevel()
+  +void nextLevel()
+  +void restartGame()
+  -void _loadLevel()
+  +void onPointerDown()
+  +void onPointerMove()
+  -void _validateMovement()
+  -bool _isPointNearPath()
+}
+
+"aspa::src::controllers::tracing_game_controller.dart::TracingController" o-- "aspa::src::models::tracing_game_model.dart::LevelModel"
+"aspa::src::controllers::tracing_game_controller.dart::TracingController" o-- "aspa::src::models::tracing_game_model.dart::SessionModel"
+"aspa::src::controllers::tracing_game_controller.dart::TracingController" o-- "aspa::src::models::tracing_game_model.dart::GameStatus"
+"aspa::src::controllers::tracing_game_controller.dart::TracingController" o-- "aspa::src::models::tracing_game_model.dart::GameDifficulty"
+"flutter::src::foundation::change_notifier.dart::ChangeNotifier" <|-- "aspa::src::controllers::tracing_game_controller.dart::TracingController"
+
+class "aspa::src::models::classification_game_model.dart::GameItem" {
+  +String name
+  +String emoji
+  +Color color
+  +String type
+  +int hashCode
+  +bool ==()
+}
+
+"aspa::src::models::classification_game_model.dart::GameItem" o-- "dart::ui::Color"
+
+class "aspa::src::models::classification_game_model.dart::GameModel" {
+  +int score
+  +List<GameItem> items
+  +DifficultyLevel currentDifficulty
+  +int totalItems
+  +double progress
+  +List<GameItem> generateItemsForDifficulty()
+  +void resetGame()
+  +void changeDifficulty()
+  +void onItemDropped()
+}
+
+"aspa::src::models::classification_game_model.dart::GameModel" o-- "aspa::src::models::classification_game_model.dart::DifficultyLevel"
+
+class "aspa::src::models::classification_game_model.dart::DifficultyLevel" {
+  +int index
+  {static} +List<DifficultyLevel> values
+  {static} +DifficultyLevel easy
+  {static} +DifficultyLevel medium
+  {static} +DifficultyLevel hard
+}
+
+"aspa::src::models::classification_game_model.dart::DifficultyLevel" o-- "aspa::src::models::classification_game_model.dart::DifficultyLevel"
+
+class "aspa::src::models::home_medico_model.dart::MedicoModel" {
+  +int id
+  +String nome
+  +String crm
+  +String email
+  +Map<String, dynamic> toJson()
+}
+
+class "aspa::src::models::home_medico_model.dart::PacienteListadoModel" {
+  +int id
+  +String nome
+  +DateTime? ultimaConsulta
+  +bool temExerciciosPendentes
+  +String ultimaConsultaFormatada
+}
+
+class "aspa::src::models::home_medico_model.dart::MedicoHomeState" {
+  +MedicoModel? medico
+  +List<PacienteListadoModel> pacientes
+  +bool isLoading
+  +String? errorMessage
+  +MedicoHomeState copyWith()
+}
+
+"aspa::src::models::home_medico_model.dart::MedicoHomeState" o-- "aspa::src::models::home_medico_model.dart::MedicoModel"
+
+class "aspa::src::models::home_paciente_model.dart::PacienteModel" {
+  +int id
+  +String nome
+  +String email
+  +int sequenciaDias
+  +DateTime? dataDiagnostico
+  +DateTime? dataCadastro
+  +int? idade
+  +String streakMessage
+  +Map<String, dynamic> toJson()
+}
+
+class "aspa::src::models::home_paciente_model.dart::ExercicioPaciente" {
+  +int idPrescricao
+  +int idExercicio
+  +String nome
+  +String descricao
+  +DateTime dataAtribuicao
+  +bool concluido
+  +int dificuldade
+}
+
+class "aspa::src::models::home_paciente_model.dart::LembretePaciente" {
+  +int id
+  +String titulo
+  +String descricao
+  +DateTime dataHora
+  +bool ativo
+}
+
+class "aspa::src::models::home_paciente_model.dart::PacienteHomeState" {
+  +PacienteModel? paciente
+  +List<ExercicioPaciente> exercicios
+  +List<LembretePaciente> lembretes
+  +bool isLoading
+  +String? errorMessage
+  +int exerciciosParaHoje
+  +int lembretesParaHoje
+  +PacienteHomeState copyWith()
+}
+
+"aspa::src::models::home_paciente_model.dart::PacienteHomeState" o-- "aspa::src::models::home_paciente_model.dart::PacienteModel"
+
+class "aspa::src::models::jardineiro_game_model.dart::GameStats" {
+  +int totalTaps
+  +int successfulTaps
+  +List<double> reactionTimes
+  +DateTime? gameStartTime
+  +double accuracy
+  +double averageReactionTime
+  +void reset()
+}
+
+class "aspa::src::models::jardineiro_game_model.dart::GameConfig" {
+  +int targetGoal
+  +GameDifficulty difficulty
+  +double getFlowerSize()
+  +int getMoveTimeLimit()
+}
+
+"aspa::src::models::jardineiro_game_model.dart::GameConfig" o-- "aspa::src::models::jardineiro_game_model.dart::GameDifficulty"
+
+class "aspa::src::models::jardineiro_game_model.dart::GameDifficulty" {
+  +int index
+  {static} +List<GameDifficulty> values
+  {static} +GameDifficulty easy
+  {static} +GameDifficulty medium
+  {static} +GameDifficulty hard
+}
+
+"aspa::src::models::jardineiro_game_model.dart::GameDifficulty" o-- "aspa::src::models::jardineiro_game_model.dart::GameDifficulty"
+
+class "aspa::src::models::login_model.dart::LoginCredentials" {
+  +String email
+  +String senha
+  +bool isValid()
+  +String? validate()
+}
+
+class "aspa::src::models::login_model.dart::LoginResponse" {
+  +bool success
+  +String? message
+  +Map<String, dynamic>? data
+}
+
+class "aspa::src::models::profile_model.dart::UserProfile" {
+  +int id
+  +String nome
+  +String email
+  +UserType userType
+  +String? crm
+  +DateTime? dataDiagnostico
+  +String? fotoUrl
+  +DateTime? dataCadastro
+  +bool isMedico
+  +bool isPaciente
+  +String displayTipo
+  +String? dataDiagnosticoFormatada
+  +Map<String, dynamic> toJson()
+}
+
+"aspa::src::models::profile_model.dart::UserProfile" o-- "aspa::src::models::profile_model.dart::UserType"
+
+class "aspa::src::models::profile_model.dart::ProfileMenuItem" {
+  +String id
+  +String label
+  +IconData icon
+  +String route
+  +Map<String, dynamic>? arguments
+}
+
+"aspa::src::models::profile_model.dart::ProfileMenuItem" o-- "flutter::src::widgets::icon_data.dart::IconData"
+
+class "aspa::src::models::profile_model.dart::ProfileState" {
+  +UserProfile? userProfile
+  +bool isLoading
+  +String? errorMessage
+  +List<ProfileMenuItem> menuItems
+  +ProfileState copyWith()
+}
+
+"aspa::src::models::profile_model.dart::ProfileState" o-- "aspa::src::models::profile_model.dart::UserProfile"
+
+class "aspa::src::models::profile_model.dart::UserType" {
+  +int index
+  {static} +List<UserType> values
+  {static} +UserType paciente
+  {static} +UserType medico
+}
+
+"aspa::src::models::profile_model.dart::UserType" o-- "aspa::src::models::profile_model.dart::UserType"
+
+class "aspa::src::models::signup_model.dart::SignUpFormData" {
+  +String nome
+  +String email
+  +String senha
+  +String confirmarSenha
+  +UserType userType
+  +String? crm
+  +DateTime? dataDiagnostico
+  +DateTime? dataNascimento
+  +String? foto
+  +SignUpFormData copyWith()
+  +ValidationResult validate()
+  -bool _isValidEmail()
+  +Map<String, dynamic> toApiMap()
+}
+
+"aspa::src::models::signup_model.dart::SignUpFormData" o-- "aspa::src::models::signup_model.dart::UserType"
+
+class "aspa::src::models::signup_model.dart::ValidationResult" {
+  +bool isValid
+  +List<String> errors
+  +String firstError
+}
+
+class "aspa::src::models::signup_model.dart::SignUpResponse" {
+  +bool success
+  +String message
+  +Map<String, dynamic>? data
+}
+
+class "aspa::src::models::signup_model.dart::RegisteredUser" {
+  +int id
+  +String nome
+  +String email
+  +UserType tipo
+  +String? crm
+  +DateTime? dataDiagnostico
+  +bool isMedico
+  +bool isPaciente
+}
+
+"aspa::src::models::signup_model.dart::RegisteredUser" o-- "aspa::src::models::signup_model.dart::UserType"
+
+class "aspa::src::models::signup_model.dart::UserType" {
+  +int index
+  {static} +List<UserType> values
+  {static} +UserType paciente
+  {static} +UserType medico
+}
+
+"aspa::src::models::signup_model.dart::UserType" o-- "aspa::src::models::signup_model.dart::UserType"
+
+class "aspa::src::models::tracing_game_model.dart::LevelModel" {
+  +int id
+  +String name
+  +Path pathShape
+  +double pathWidth
+  +Offset startPoint
+  +Offset endPoint
+}
+
+"aspa::src::models::tracing_game_model.dart::LevelModel" o-- "dart::ui::Path"
+"aspa::src::models::tracing_game_model.dart::LevelModel" o-- "dart::ui::Offset"
+
+class "aspa::src::models::tracing_game_model.dart::SessionModel" {
+  +List<Offset> userTrace
+  +GameStatus status
+  +GameDifficulty difficulty
+  +void reset()
+}
+
+"aspa::src::models::tracing_game_model.dart::SessionModel" o-- "aspa::src::models::tracing_game_model.dart::GameStatus"
+"aspa::src::models::tracing_game_model.dart::SessionModel" o-- "aspa::src::models::tracing_game_model.dart::GameDifficulty"
+
+class "aspa::src::models::tracing_game_model.dart::GameDifficulty" {
+  +int index
+  {static} +List<GameDifficulty> values
+  {static} +GameDifficulty easy
+  {static} +GameDifficulty medium
+  {static} +GameDifficulty hard
+}
+
+"aspa::src::models::tracing_game_model.dart::GameDifficulty" o-- "aspa::src::models::tracing_game_model.dart::GameDifficulty"
+
+class "aspa::src::models::tracing_game_model.dart::GameStatus" {
+  +int index
+  {static} +List<GameStatus> values
+  {static} +GameStatus playing
+  {static} +GameStatus won
+  {static} +GameStatus lost
+}
+
+"aspa::src::models::tracing_game_model.dart::GameStatus" o-- "aspa::src::models::tracing_game_model.dart::GameStatus"
+
+
+@enduml

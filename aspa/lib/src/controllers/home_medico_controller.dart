@@ -74,12 +74,6 @@ class HomeMedicoController extends ChangeNotifier {
     );
   }
 
-  void navegarParaPerfilPaciente(
-      PacienteListadoModel paciente, BuildContext context) {
-    // TODO: Implementar navegação para tela do paciente corretamente
-    // Modular.to.pushNamed('/paciente/${paciente.id}');
-  }
-
   void _updateState({
     MedicoModel? medico,
     List<PacienteListadoModel>? pacientes,

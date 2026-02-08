@@ -52,7 +52,7 @@ class _ChatPageState extends State<ChatPage> {
   void _conectarWebSocket() {
     channel = WebSocketChannel.connect(
       // usar o IP correto aqui msm logica do api service
-      Uri.parse('ws://127.0.0.1:8000/ws/${widget.meuId}'),
+      Uri.parse('https://kylah-savouriest-superserviceably.ngrok-free.dev'),
     );
 
     _assinaturaWebSocket = channel.stream.listen((message) {

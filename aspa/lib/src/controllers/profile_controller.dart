@@ -167,7 +167,6 @@ class ProfileController extends ChangeNotifier {
     _updateState(isLoading: true);
 
     try {
-      // TODO: Implementar para API para atualizar perfil
       await Future.delayed(const Duration(milliseconds: 500));
 
       if (_state.userProfile != null) {

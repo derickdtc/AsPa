@@ -395,141 +395,135 @@ class _PrescricaoPageState extends State<PrescricaoPage> {
     }
   }
 
-Future<void> gerarRelatorio() async {
-  final relatorio = await _api.getRelatorio(widget.idPaciente);
-
-  if (!mounted) return;
-
-  if (relatorio == null) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Erro ao gerar relatório")),
-    );
-    return;
-  }
-
-  final pdf = pw.Document();
-
-  final paciente = relatorio['paciente'];
-  final prescricoes = relatorio['prescricoes'];
-
-pdf.addPage(
-  pw.MultiPage(
-    pageFormat: PdfPageFormat.a4,
-    build: (_) {
-      final widgets = <pw.Widget>[];
-
-      widgets.add(
-        pw.Text(
-          "Relatório Clínico",
-          style: pw.TextStyle(fontSize: 22, fontWeight: pw.FontWeight.bold),
-        ),
-      );
-
-      widgets.add(pw.SizedBox(height: 12));
-      widgets.add(pw.Text("Paciente: ${paciente['nome_usuario']}"));
-      widgets.add(pw.Text("Data do diagnóstico: ${formatarDate(paciente['data_diagnostico'])}"));
-      widgets.add(pw.Divider());
-
-      if (prescricoes is String) {
-        widgets.add(pw.Text(prescricoes));
-        return widgets;
-      }
-
-      for (final p in prescricoes) {
-        widgets.add(pw.SizedBox(height: 12));
-
-        widgets.add(
-          pw.Text(
-            "Prescrição - ${formatarDateTime(p['data_atualizacao'])}",
-            style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold),
-          ),
-        );
-
-        widgets.add(pw.Text("Observações: ${p['observacoes_gerais'] ?? '-'}"));
-        widgets.add(pw.SizedBox(height: 8));
-
-        /// Medicamentos
-        widgets.add(
-          pw.Text("Medicamentos:",
-              style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
-        );
-
-        if (p['lembretes'].isEmpty) {
-          widgets.add(pw.Text("Nenhum medicamento registrado."));
-        } else {
-          for (final l in p['lembretes']) {
-            widgets.add(
-              pw.Text(
-                "- Nome: ${l['nome_medicamento']} | Dose diária: ${l['dose_diaria']} | Horário: ${l['horario']}",
-              ),
-            );
-          }
-        }
-
-        widgets.add(pw.SizedBox(height: 8));
-
-        /// Exercícios
-        widgets.add(
-          pw.Text("Exercícios:",
-              style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
-        );
-
-        if (p['exercicios'].isEmpty) {
-          widgets.add(pw.Text("Nenhum exercício registrado."));
-        } else {
-          for (final e in p['exercicios']) {
-            widgets.add(
-              pw.Text(
-                "- Nome: ${e['nome']} | Duração: ${e['duracao_minutos']} min | "
-                "${e['frequencia_semanal']}x/semana | Ultima execução: ${formatarDate(e['ultima_execucao'])}",
-              ),
-            );
-          }
-        }
-      }
-
-      return widgets;
-    },
-  ),
-);
-
-
-  await _salvarPdf(pdf);
-}
-
-Future<void> _salvarPdf(pw.Document pdf) async {
-  final bytes = await pdf.save();
-
-  if (kIsWeb) {
-    await Printing.layoutPdf(
-      onLayout: (_) async => bytes,
-    );
-  } else {
-    final dir = await getApplicationDocumentsDirectory();
-    final file = File('${dir.path}/relatorio_paciente.pdf');
-    await file.writeAsBytes(bytes);
+  Future<void> gerarRelatorio() async {
+    final relatorio = await _api.getRelatorio(widget.idPaciente);
 
     if (!mounted) return;
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text("PDF salvo em ${file.path}")),
+    if (relatorio == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Erro ao gerar relatório")),
+      );
+      return;
+    }
+
+    final pdf = pw.Document();
+
+    final paciente = relatorio['paciente'];
+    final prescricoes = relatorio['prescricoes'];
+
+    pdf.addPage(
+      pw.MultiPage(
+        pageFormat: PdfPageFormat.a4,
+        build: (_) {
+          final widgets = <pw.Widget>[];
+
+          widgets.add(
+            pw.Text(
+              "Relatório Clínico",
+              style: pw.TextStyle(fontSize: 22, fontWeight: pw.FontWeight.bold),
+            ),
+          );
+
+          widgets.add(pw.SizedBox(height: 12));
+          widgets.add(pw.Text("Paciente: ${paciente['nome_usuario']}"));
+          widgets.add(pw.Text(
+              "Data do diagnóstico: ${formatarDate(paciente['data_diagnostico'])}"));
+          widgets.add(pw.Divider());
+
+          if (prescricoes is String) {
+            widgets.add(pw.Text(prescricoes));
+            return widgets;
+          }
+
+          for (final p in prescricoes) {
+            widgets.add(pw.SizedBox(height: 12));
+
+            widgets.add(
+              pw.Text(
+                "Prescrição - ${formatarDateTime(p['data_atualizacao'])}",
+                style:
+                    pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold),
+              ),
+            );
+
+            widgets
+                .add(pw.Text("Observações: ${p['observacoes_gerais'] ?? '-'}"));
+            widgets.add(pw.SizedBox(height: 8));
+
+            /// Medicamentos
+            widgets.add(
+              pw.Text("Medicamentos:",
+                  style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+            );
+
+            if (p['lembretes'].isEmpty) {
+              widgets.add(pw.Text("Nenhum medicamento registrado."));
+            } else {
+              for (final l in p['lembretes']) {
+                widgets.add(
+                  pw.Text(
+                    "- Nome: ${l['nome_medicamento']} | Dose diária: ${l['dose_diaria']} | Horário: ${l['horario']}",
+                  ),
+                );
+              }
+            }
+
+            widgets.add(pw.SizedBox(height: 8));
+
+            /// Exercícios
+            widgets.add(
+              pw.Text("Exercícios:",
+                  style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+            );
+
+            if (p['exercicios'].isEmpty) {
+              widgets.add(pw.Text("Nenhum exercício registrado."));
+            } else {
+              for (final e in p['exercicios']) {
+                widgets.add(
+                  pw.Text(
+                    "- Nome: ${e['nome']} | Duração: ${e['duracao_minutos']} min | "
+                    "${e['frequencia_semanal']}x/semana | Ultima execução: ${formatarDate(e['ultima_execucao'])}",
+                  ),
+                );
+              }
+            }
+          }
+
+          return widgets;
+        },
+      ),
     );
+
+    await _salvarPdf(pdf);
   }
-}
 
-String formatarDateTime(dynamic data) {
-  if (data == null) return '-';
+  Future<void> _salvarPdf(pw.Document pdf) async {
+    final bytes = await pdf.save();
 
-  final dateTime = DateTime.parse(data.toString());
-  return DateFormat('dd/MM/yyyy HH:mm').format(dateTime);
-}
+    if (kIsWeb) {
+      await Printing.layoutPdf(onLayout: (_) async => bytes);
+    } else {
+      // Abre o menu nativo de compartilhamento/salvamento
+      await Printing.sharePdf(
+          bytes: bytes, filename: 'relatorio_${widget.nomePaciente}.pdf');
+    }
+  }
 
-String formatarDate(dynamic data) {
-  if (data == null) return '-';
+  String formatarDateTime(dynamic data) {
+    if (data == null) return '-';
 
-  final date = DateTime.parse(data.toString());
-  return DateFormat('dd/MM/yyyy').format(date);
-}
+    final dateTime = DateTime.parse(data.toString());
+    return DateFormat('dd/MM/yyyy HH:mm').format(dateTime);
+  }
+
+  String formatarDate(dynamic data) {
+    if (data == null) return '-';
+
+    final date = DateTime.parse(data.toString());
+    return DateFormat('dd/MM/yyyy').format(date);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -918,7 +912,8 @@ String formatarDate(dynamic data) {
                   SizedBox(
                     width: double.infinity,
                     height: 56,
-                    child: OutlinedButton(//aqui
+                    child: OutlinedButton(
+                      //aqui
                       onPressed: gerarRelatorio,
                       style: OutlinedButton.styleFrom(
                         foregroundColor: colorScheme.primary,
