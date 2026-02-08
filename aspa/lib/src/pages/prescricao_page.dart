@@ -737,55 +737,70 @@ class _PrescricaoPageState extends State<PrescricaoPage> {
               ),
               const SizedBox(height: 32),
 
-              // Botão Salvar
-              Container(
-                decoration: BoxDecoration(
-                  color: colorScheme.surface,
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: colorScheme.shadow.withValues(alpha: 0.1),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: SizedBox(
-                  width: double.infinity,
-                  height: 56,
-                  child: ElevatedButton(
-                    onPressed: _salvarTudo,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: colorScheme.primary,
-                      foregroundColor: colorScheme.onPrimary,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
+              Column(
+                children: [
+                  // Botão Salvar
+                  SizedBox(
+                    width: double.infinity,
+                    height: 56,
+                    child: ElevatedButton(
+                      onPressed: _salvarTudo,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: colorScheme.primary,
+                        foregroundColor: colorScheme.onPrimary,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        elevation: 0,
                       ),
-                      elevation: 0,
-                      shadowColor: Colors.transparent,
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.check_circle_outline,
-                          color: colorScheme.onPrimary,
-                          size: 20,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          "SALVAR TRATAMENTO COMPLETO",
-                          style: textTheme.labelLarge?.copyWith(
-                            fontWeight: FontWeight.w600,
-                            color: colorScheme.onPrimary,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.check_circle_outline, size: 20),
+                          const SizedBox(width: 8),
+                          Text(
+                            "SALVAR TRATAMENTO COMPLETO",
+                            style: textTheme.labelLarge?.copyWith(
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
-                ),
+
+                  const SizedBox(height: 12),
+
+                  // Botão Gerar Relatório
+                  SizedBox(
+                    width: double.infinity,
+                    height: 56,
+                    child: OutlinedButton(
+                      onPressed: (){},
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: colorScheme.primary,
+                        side: BorderSide(color: colorScheme.primary),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.picture_as_pdf_outlined, size: 20),
+                          const SizedBox(width: 8),
+                          Text(
+                            "GERAR RELATÓRIO",
+                            style: textTheme.labelLarge?.copyWith(
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 24),
             ],
           ),
         ),
