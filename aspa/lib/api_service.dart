@@ -942,4 +942,21 @@ class ApiService {
       return [];
     }
   }
+
+  Future<Map<String, dynamic>?> getRelatorio(int id) async {
+    final url = Uri.parse('$baseUrl/relatorio/$id');
+
+    try {
+      final response = await http.get(url);
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        return null;
+      }
+    } catch (e) {
+      // print("Erro ao buscar paciente: $e");
+      return null;
+    }
+  }
 }

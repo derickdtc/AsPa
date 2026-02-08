@@ -5,7 +5,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session, relationship
 from passlib.context import CryptContext
 from typing import Optional, List, Dict
-from datetime import date, datetime, time
+from datetime import date, datetime, time, timedelta,timezone
 import os
 from dotenv import load_dotenv
 from passlib.context import CryptContext
@@ -1164,6 +1164,84 @@ def concluir_exercicio_hoje(id_prescricao: int, id_exercicio: int, db: Session =
     db.commit()
     
     return {"msg": "Exercício concluído hoje!"}
+
+@app.get("/relatorio/{id_paciente}")
+def gerar_relatorio(id_paciente: int, db: Session = Depends(get_db)):
+    data_limite = datetime.now(timezone.utc) - timedelta(days=30)
+
+    paciente = (
+        db.query(
+            UsuarioDB.nome.label("nome_usuario"),
+            PacienteDB.data_diagnostico.label("data_diagnostico")
+        )
+        .join(UsuarioDB, UsuarioDB.id_usuario == PacienteDB.id_paciente)
+        .filter(PacienteDB.id_paciente == id_paciente)
+        .first()
+    )
+
+    if not paciente:
+        raise HTTPException(status_code=404, detail="Paciente não encontrado")
+    
+    prescricoes = (
+        db.query(PrescricaoDB)
+        .filter(
+            PrescricaoDB.id_paciente == id_paciente,
+            PrescricaoDB.data_atualizacao >= data_limite
+        )
+        .all()
+    )
+
+    if not prescricoes:
+        return {
+            "paciente": dict(paciente._mapping),
+            "prescricoes": "Não foram encontradas prescrições nos últimos 30 dias"
+        }
+
+    resultado_prescricoes = []
+
+    for prescricao in prescricoes:
+        lembretes = (
+            db.query(
+                LembreteDB.nome_medicamento,
+                LembreteDB.dose_diaria,
+                LembreteDB.horario,
+                LembreteDB.status,
+                LembreteDB.tipo
+            )
+            .filter(LembreteDB.id_prescricao == prescricao.id_prescricao)
+            .all()
+        )
+
+        exercicios = (
+            db.query(
+                ExercicioDB.nome,
+                ExercicioDB.descricao,
+                ExercicioDB.tipo,
+                PrescricaoExercicioDB.ultima_execucao,
+                PrescricaoExercicioDB.duracao_minutos,
+                PrescricaoExercicioDB.repeticoes,
+                PrescricaoExercicioDB.frequencia_semanal,
+                PrescricaoExercicioDB.observacoes
+            )
+            .join(PrescricaoExercicioDB,
+                  PrescricaoExercicioDB.id_exercicio_fk == ExercicioDB.id_exercicio)
+            .filter(PrescricaoExercicioDB.id_prescricao_fk == prescricao.id_prescricao)
+            .all()
+        )
+
+        resultado_prescricoes.append({
+            "data_atualizacao": prescricao.data_atualizacao,
+            "observacoes_gerais": prescricao.observacoes_gerais,
+            "lembretes": [dict(l._mapping) for l in lembretes],
+            "exercicios": [dict(e._mapping) for e in exercicios]
+        })
+
+    return {
+        "paciente": dict(paciente._mapping),
+        "prescricoes": resultado_prescricoes
+    }
+
+    
 
 # teste
 @app.get("/")
