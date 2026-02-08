@@ -25,7 +25,7 @@ class GameSelectionPage extends StatelessWidget {
         'route': '/game_tracing',
       },
       {
-        'title': 'Classificação de objetos',
+        'title': 'Classificação de alimentos',
         'description': 'Exercício de raciocínio e memória',
         'icon': Icons.emoji_objects_outlined,
         'color': colorScheme.secondary,

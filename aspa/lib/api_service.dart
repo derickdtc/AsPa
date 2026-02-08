@@ -6,8 +6,7 @@ class ApiService {
   // se usar Emulador Android use '10.0.2.2'
   // se usar celular use o IP do PC (ex: '192.168.1.15')
   // se usar Edge/Chrome use http://127.0.0.1:8000
-  static const String baseUrl =
-      "https://kylah-savouriest-superserviceably.ngrok-free.dev";
+  static const String baseUrl = "https://aspa-backend.onrender.com";
 // ngrok
   // static const String baseUrl = "http://192.168.3.126:8000";
 

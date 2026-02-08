@@ -94,9 +94,8 @@ class HomeController extends ChangeNotifier {
 
   Future<void> marcarExercicioConcluido(
       int idPrescricao, int idExercicio) async {
-    
     final exercicioFeitoHoje = exerciciosFeitos.isNotEmpty;
-    
+
     final sucesso =
         await _api.marcarExercicioComoFeito(idPrescricao, idExercicio);
 
@@ -120,7 +119,7 @@ class HomeController extends ChangeNotifier {
 
         _updateState(exercicios: novaLista);
 
-        if(!exercicioFeitoHoje){
+        if (!exercicioFeitoHoje) {
           await aumentarStreak();
         }
       }
