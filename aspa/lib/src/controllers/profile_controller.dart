@@ -108,6 +108,13 @@ class ProfileController extends ChangeNotifier {
   List<ProfileMenuItem> _buildPacienteMenuItems(int userId) {
     return [
       ProfileMenuItem(
+        id: 'friends',
+        label: 'Friends',
+        icon: Icons.person,
+        route: '/friends',
+        arguments: {'userId': userId},
+      ),
+      ProfileMenuItem(
         id: 'edit',
         label: 'Editar Dados',
         icon: Icons.person,
@@ -152,13 +159,6 @@ class ProfileController extends ChangeNotifier {
         label: 'Logout',
         icon: Icons.logout,
         route: '/login',
-      ),
-      ProfileMenuItem(
-        id: 'friends',
-        label: 'Friends',
-        icon: Icons.person,
-        route: '/friends',
-        arguments: {'userId': userId},
       ),
     ];
   }
