@@ -109,7 +109,7 @@ class ProfileController extends ChangeNotifier {
     return [
       ProfileMenuItem(
         id: 'friends',
-        label: 'Friends',
+        label: 'Amigos',
         icon: Icons.person,
         route: '/friends',
         arguments: {'userId': userId},

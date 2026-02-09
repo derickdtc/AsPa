@@ -52,7 +52,7 @@ class _ChatPageState extends State<ChatPage> {
   void _conectarWebSocket() {
     channel = WebSocketChannel.connect(
       // usar o IP correto aqui msm logica do api service
-      Uri.parse('https://aspa-backend.onrender.com'),
+      Uri.parse('wss://aspa-backend.onrender.com/ws/${widget.meuId}'),
     );
 
     _assinaturaWebSocket = channel.stream.listen((message) {
@@ -65,9 +65,9 @@ class _ChatPageState extends State<ChatPage> {
           _mensagens.add({"texto": dados['mensagem'], "isMe": false});
         });
       }
-    }, onError: (error) {
-      // ! Adicionar proteção de erro
-    }, cancelOnError: true // para de ouvir se der erro grave
+    },
+        onError: (error) {},
+        cancelOnError: true // para de ouvir se der erro grave
         );
   }
 
